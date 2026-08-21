@@ -1,0 +1,37 @@
+# Artefatos de build (PyInstaller / setuptools)
+build/
+dist/
+*.spec.bak
+*.egg-info/
+
+# Bytecode Python
+__pycache__/
+*.py[cod]
+
+# Ambientes virtuais
+.venv/
+venv/
+
+# Modelos CTranslate2 — centenas de MB, não versionar
+models/
+*.bin
+*.spm
+
+# Cache do manbr
+.cache/
+cache/
+
+# Segredos
+.env
+*.key
+
+# Testes e cobertura
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor / SO
+.vscode/
+.idea/
+*.swp
+.DS_Store

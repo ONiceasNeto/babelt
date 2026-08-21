@@ -1,0 +1,127 @@
+# Extensões de arquivo e sufixos de unit do systemd reconhecidos pelo padrão
+# "dotted" de mask.py. Uma por linha; # começa comentário; ordem irrelevante.
+#
+# Esta lista substitui o antigo limite [a-z]{2,6}. Motivo: o limite falhava
+# por FORMA — .service (7 letras) e .automount (9) ficavam de fora sem que
+# nada no código dissesse isso — enquanto a lista falha só por OMISSÃO, que é
+# visível, testável e corrigível editando este arquivo.
+#
+# REGRA: nada de extensão de uma letra só. É o que mantém "e.g." e "i.e."
+# fora do mascaramento — antes isso era garantido pelo limite inferior do
+# {2,6}, agora é garantido por esta regra. Há um teste que a verifica.
+# Globs como *.c são cobertos pelo padrão de glob, que não consulta a lista.
+
+# --- units do systemd ---
+service
+socket
+device
+mount
+automount
+swap
+target
+path
+timer
+slice
+scope
+network
+netdev
+link
+image
+
+# --- configuração ---
+conf
+cnf
+cfg
+ini
+json
+yaml
+yml
+toml
+xml
+rules
+desktop
+list
+lock
+spec
+
+# --- scripts e fontes ---
+sh
+bash
+zsh
+py
+pl
+rb
+js
+ts
+go
+rs
+cpp
+hpp
+awk
+sed
+
+# --- arquivos e compressão ---
+tar
+tgz
+gz
+xz
+bz2
+zst
+zip
+iso
+img
+deb
+rpm
+
+# --- dados e texto ---
+txt
+md
+log
+csv
+tsv
+sql
+db
+sqlite
+html
+htm
+pdf
+out
+bak
+tmp
+orig
+patch
+diff
+man
+
+# --- chaves e certificados ---
+pem
+key
+crt
+csr
+gpg
+asc
+pub
+
+# --- domínios de topo (o padrão dotted também cobre nomes de host) ---
+com
+org
+net
+edu
+gov
+mil
+int
+info
+biz
+io
+dev
+app
+br
+uk
+de
+fr
+nl
+jp
+cn
+ru
+eu
+us

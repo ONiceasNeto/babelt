@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "manbr"
+version = "0.1.0"
+description = "Traduz man pages e saída de terminal do inglês para pt-BR, offline"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+keywords = ["man", "manpage", "tradução", "translation", "pt-BR", "nmt", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Developers",
+    "Natural Language :: Portuguese (Brazilian)",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+dependencies = [
+    "ctranslate2>=4.0,<5",
+    "sentencepiece>=0.2,<0.3",
+    "huggingface-hub>=0.20",
+]
+
+[project.urls]
+Homepage = "https://github.com/manbr/manbr"
+Changelog = "https://github.com/manbr/manbr/blob/main/CHANGELOG.md"
+Issues = "https://github.com/manbr/manbr/issues"
+
+[project.scripts]
+manbr = "manbr.__main__:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "mypy>=1.8"]
+# Só para baixar e converter o modelo. Não é preciso em tempo de execução.
+convert = ["transformers>=4.40", "torch>=2.0"]
+build = ["pyinstaller>=6.0"]
+
+[tool.setuptools.packages.find]
+include = ["manbr*"]
+
+[tool.setuptools.package-data]
+manbr = ["extensions.txt", "headers.txt", "glossary.txt", "py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "model: exige o modelo NMT baixado; pulado se ausente",
+]
+
+[tool.mypy]
+# 3.12 e não 3.11 por causa da cadeia de stubs: `import pytest` arrasta os
+# stubs do numpy, que usam sintaxe de 3.12 e não são analisáveis com
+# python_version = 3.11. O piso de execução continua sendo 3.11
+# (requires-python), e o pacote em si é verificado nesse piso com:
+#     mypy --python-version 3.11 manbr
+python_version = "3.12"
+strict = true
+files = ["manbr", "tests"]
+
+# Nem ctranslate2 nem sentencepiece publicam stubs; numpy publica, mas os dele
+# usam sintaxe de 3.12 e o projeto declara 3.11 como piso.
+[[tool.mypy.overrides]]
+module = ["ctranslate2", "ctranslate2.*", "sentencepiece", "sentencepiece.*", "numpy", "numpy.*"]
+ignore_missing_imports = true
+follow_imports = "skip"

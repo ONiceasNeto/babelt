@@ -1,0 +1,160 @@
+PS(1)                           User Commands                          PS(1)
+
+NAME
+       ps - report a snapshot of the current processes.
+
+SYNOPSIS
+       ps [options]
+
+DESCRIPTION
+       ps displays information about a selection of the active processes.
+       If you want a repetitive update of the selection and the displayed
+       information, use top instead.
+
+       This version of ps accepts several kinds of options:
+
+       1   UNIX  options,  which  may  be  grouped and must be preceded by a
+           dash.
+       2   BSD options, which may be grouped and must not  be  used  with  a
+           dash.
+       3   GNU long options, which are preceded by two dashes.
+
+       Options  of  different  types  may be freely mixed, but conflicts can
+       appear.  There are some synonymous options,  which  are  functionally
+       identical, due to the many standards and ps implementations that this
+       ps is compatible with.
+
+       By  default, ps selects all processes with the same effective user ID
+       (euid=EUID) as the current user and associated with the same terminal
+       as the invoker.  It displays the process ID (pid=PID),  the  terminal
+       associated  with  the  process (tname=TTY), the cumulated CPU time in
+       [DD-]hh:mm:ss format (time=TIME), and the executable name (ucmd=CMD).
+       Output is unsorted by default.
+
+       The use of BSD-style options will add process  state  (stat=STAT)  to
+       the  default display and show the command args (args=COMMAND) instead
+       of the executable name.  You can override  this  with  the  PS_FORMAT
+       environment  variable.  The use of BSD-style options will also change
+       the process selection to include processes on other terminals  (TTYs)
+       that  are owned by you; alternately, this may be described as setting
+       the selection to be the set of  all  processes  filtered  to  exclude
+       processes  owned  by other users or not on a terminal.  These effects
+       are not considered when options are described  as  being  "identical"
+       below, so -M will be considered identical to Z and so on.
+
+       Except  as  described  below, process selection options are additive.
+       The default selection is discarded, and then the  selected  processes
+       are  added  to  the set of processes to be displayed.  A process will
+       thus be shown if it meets any of the given selection criteria.
+
+EXAMPLES
+       To see every process on the system using standard syntax:
+          ps -e
+          ps -ef
+          ps -eF
+          ps -ely
+
+       To see every process on the system using BSD syntax:
+          ps ax
+          ps axu
+
+       To print a process tree:
+          ps -ejH
+          ps axjf
+
+       To get info about threads:
+          ps -eLf
+          ps axms
+
+       To get security info:
+          ps -eo euser,ruser,suser,fuser,f,comm,label
+          ps axZ
+          ps -eM
+
+       To see every process running as root (real & effective ID) in user
+       format:
+          ps -U root -u root u
+
+       To see every process with a user-defined format:
+          ps -eo pid,tid,class,rtprio,ni,pri,psr,pcpu,stat,wchan:14,comm
+          ps axo stat,euid,ruid,tty,tpgid,sess,pgrp,ppid,pid,pcpu,comm
+          ps -Ao pid,tt,user,fname,tmout,f,wchan
+
+       Print only the process IDs of syslogd:
+          ps -C syslogd -o pid=
+
+       Print only the name of PID 42:
+          ps -q 42 -o comm=
+
+SIMPLE PROCESS SELECTION
+       a      Lift the  BSD-style  "only  yourself"  restriction,  which  is
+              imposed  upon  the  set  of  all processes when some BSD-style
+              (without "-") options are used  or  when  the  ps  personality
+              setting  is  BSD-like.   The set of processes selected in this
+              manner is in addition to the  set  of  processes  selected  by
+              other  means.   An  alternate  description is that this option
+              causes ps to list all processes with a terminal (tty),  or  to
+              list all processes when used together with the x option.
+
+       -A     Select all processes.  Identical to -e.
+
+       -a     Select   all   processes  except  both  session  leaders  (see
+              getsid(2)) and processes not associated with a terminal.
+
+       -d     Select all processes except session leaders.
+
+       --deselect
+              Select all processes except those that fulfill  the  specified
+              conditions (negates the selection).  Identical to -N.
+
+       -e     Select all processes.  Identical to -A.
+
+       g      Really  all,  even session leaders.  This flag is obsolete and
+              may be discontinued in  a  future  release.   It  is  normally
+              implied  by  the  a flag, and is only useful when operating in
+              the sunos4 personality.
+
+       -N     Select all processes except those that fulfill  the  specified
+              conditions (negates the selection).  Identical to --deselect.
+
+       T      Select all processes associated with this terminal.  Identical
+              to the t option without any argument.
+
+       r      Restrict the selection to only running processes.
+
+       x      Lift  the  BSD-style  "must  have a tty" restriction, which is
+              imposed upon the set of  all  processes  when  some  BSD-style
+              (without  "-")  options  are  used  or when the ps personality
+              setting is BSD-like.  The set of processes  selected  in  this
+              manner  is  in  addition  to  the set of processes selected by
+              other means.  An alternate description  is  that  this  option
+              causes  ps  to  list  all processes owned by you (same EUID as
+              ps), or to list all processes when used together  with  the  a
+              option.
+
+PROCESS SELECTION BY LIST
+       These   options   accept   a   single  argument  in  the  form  of  a
+       blank-separated or comma-separated list.  They can be  used  multiple
+       times.  For example: ps -p "1 2" -p 3,4
+
+       123    Identical to --pid 123.
+
+       +123   Identical to --sid 123.
+
+       -123   Select by process group ID (PGID).
+
+       -C cmdlist
+              Select  by  command  name.   This  selects the processes whose
+              executable name is given in cmdlist.  NOTE: The  command  name
+              is  not  the  same  as  the command line. Previous versions of
+              procps and the  kernel  truncated  this  command  name  to  15
+              characters.  This  limitation is no longer present in both. If
+              you depended on matching only 15 characters, you may no longer
+              get a match.
+
+       -G grplist
+              Select by real group ID (RGID)  or  name.   This  selects  the
+              processes  whose real group name or ID is in the grplist list.
+              The real group ID identifies the group of the user who created
+              the process, see getgid(2).
+

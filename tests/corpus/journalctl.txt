@@ -1,0 +1,160 @@
+JOURNALCTL(1)                    journalctl                    JOURNALCTL(1)
+
+NAME
+       journalctl - Print log entries from the systemd journal
+
+SYNOPSIS
+
+       journalctl [OPTIONS...] [MATCHES...]
+
+DESCRIPTION
+       journalctl is used to print the log entries stored in the journal by
+       systemd-journald.service(8) and systemd-journal-remote.service(8).
+
+       If called without parameters, it will show the contents of the
+       journal accessible to the calling user, starting with the oldest
+       entry collected.
+
+       If one or more match arguments are passed, the output is filtered
+       accordingly. A match is in the format "FIELD=VALUE", e.g.
+       "_SYSTEMD_UNIT=httpd.service", referring to the components of a
+       structured journal entry. See systemd.journal-fields(7) for a list of
+       well-known fields. If multiple matches are specified matching
+       different fields, the log entries are filtered by both, i.e. the
+       resulting output will show only entries matching all the specified
+       matches of this kind. If two matches apply to the same field, then
+       they are automatically matched as alternatives, i.e. the resulting
+       output will show entries matching any of the specified matches for
+       the same field. Finally, the character "+" may appear as a separate
+       word between other terms on the command line. This causes all matches
+       before and after to be combined in a disjunction (i.e. logical OR).
+
+       It is also possible to filter the entries by specifying an absolute
+       file path as an argument. The file path may be a file or a symbolic
+       link and the file must exist at the time of the query. If a file path
+       refers to an executable binary, an "_EXE=" match for the
+       canonicalized binary path is added to the query. If a file path
+       refers to an executable script, a "_COMM=" match for the script name
+       is added to the query. If a file path refers to a device node,
+       "_KERNEL_DEVICE=" matches for the kernel name of the device and for
+       each of its ancestor devices is added to the query. Symbolic links
+       are dereferenced, kernel names are synthesized, and parent devices
+       are identified from the environment at the time of the query. In
+       general, a device node is the best proxy for an actual device, as log
+       entries do not usually contain fields that identify an actual device.
+       For the resulting log entries to be correct for the actual device,
+       the relevant parts of the environment at the time the entry was
+       logged, in particular the actual device corresponding to the device
+       node, must have been the same as those at the time of the query.
+       Because device nodes generally change their corresponding devices
+       across reboots, specifying a device node path causes the resulting
+       entries to be restricted to those from the current boot.
+
+       Additional constraints may be added using options --boot, --unit=,
+       etc., to further limit what entries will be shown (logical AND).
+
+       Output is interleaved from all accessible journal files, whether they
+       are rotated or currently being written, and regardless of whether
+       they belong to the system itself or are accessible user journals. The
+       --header option can be used to identify which files are being shown.
+
+       The set of journal files which will be used can be modified using the
+       --user, --system, --directory, and --file options, see below.
+
+       All users are granted access to their private per-user journals.
+       However, by default, only root and users who are members of a few
+       special groups are granted access to the system journal and the
+       journals of other users. Members of the groups "systemd-journal",
+       "adm", and "wheel" can read all journal files. Note that the two
+       latter groups traditionally have additional privileges specified by
+       the distribution. Members of the "wheel" group can often perform
+       administrative tasks.
+
+       The output is paged through less by default, and long lines are
+       "truncated" to screen width. The hidden part can be viewed by using
+       the left-arrow and right-arrow keys. Paging can be disabled; see the
+       --no-pager option and the "Environment" section below.
+
+       When outputting to a tty, lines are colored according to priority:
+       lines of level ERROR and higher are colored red; lines of level
+       WARNING are colored yellow; lines of level NOTICE are highlighted;
+       lines of level INFO are displayed normally; lines of level DEBUG are
+       colored grey.
+
+       To write entries to the journal, a few methods may be used. In
+       general, output from systemd units is automatically connected to the
+       journal, see systemd-journald.service(8). In addition, systemd-cat(1)
+       may be used to send messages to the journal directly.
+
+SOURCE OPTIONS
+       The following options control where to read journal records from:
+
+       --system, --user
+           Show messages from system services and the kernel (with
+           --system). Show messages from service of current user (with
+           --user). If neither is specified, show all messages that the user
+           can see.
+
+           The --user option affects how --unit= arguments are treated. See
+           --unit=.
+
+           Note that --user only works if persistent logging is enabled, via
+           the Storage= setting in journald.conf(5).
+
+           Added in version 205.
+
+       -M, --machine=
+           Show messages from a running, local container. Specify a
+           container name to connect to.
+
+           Added in version 209.
+
+       -m, --merge
+           Show entries interleaved from all available journals, including
+           remote ones.
+
+           Added in version 190.
+
+       -D DIR, --directory=DIR
+           Takes a directory path as argument. If specified, journalctl will
+           operate on the specified journal directory DIR instead of the
+           default runtime and system journal paths.
+
+           Added in version 187.
+
+       --file=GLOB
+           Takes a file glob as an argument. If specified, journalctl will
+           operate on the specified journal files matching GLOB instead of
+           the default runtime and system journal paths. May be specified
+           multiple times, in which case files will be suitably interleaved.
+
+           Added in version 205.
+
+       --root=ROOT
+           Takes a directory path as an argument. If specified, journalctl
+           will operate on journal directories and catalog file hierarchy
+           underneath the specified directory instead of the root directory
+           (e.g.  --update-catalog will create
+           ROOT/var/lib/systemd/catalog/database, and journal files under
+           ROOT/run/journal/ or ROOT/var/log/journal/ will be displayed).
+
+           Added in version 201.
+
+       --image=IMAGE
+           Takes a path to a disk image file or block device node. If
+           specified, journalctl will operate on the file system in the
+           indicated disk image. This option is similar to --root=, but
+           operates on file systems stored in disk images or block devices,
+           thus providing an easy way to extract log data from disk images.
+           The disk image should either contain just a file system or a set
+           of file systems within a GPT partition table, following the
+           Discoverable Partitions Specification[1]. For further information
+           on supported disk images, see systemd-nspawn(1)'s switch of the
+           same name.
+
+           Added in version 247.
+
+       --image-policy=policy
+           Takes an image policy string as argument, as per systemd.image-
+           policy(7). The policy is enforced when operating on the disk
+           image specified via --image=, see above. If not specified

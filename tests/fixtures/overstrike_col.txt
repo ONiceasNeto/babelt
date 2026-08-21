@@ -1,0 +1,80 @@
+SS(8)                      System Manager's Manual                     SS(8)
+
+NAME
+       ss - another utility to investigate sockets
+
+SYNOPSIS
+       ss [options] [ FILTER ]
+
+DESCRIPTION
+       ss  is  used to dump socket statistics. It allows showing information
+       similar to netstat.  It can display more TCP  and  state  information
+       than other tools.
+
+OPTIONS
+       When no option is used ss displays a list of open non-listening sock‐
+       ets (e.g. TCP/UNIX/UDP) that have established connection.
+
+       -h, --help
+              Show summary of options.
+
+       -V, --version
+              Output version information.
+
+       -H, --no-header
+              Suppress header line.
+
+       -O, --oneline
+              Print each socket's data on a single line.
+
+       -n, --numeric
+              Do not try to resolve service names. Show exact bandwidth val‐
+              ues, instead of human-readable.
+
+       -r, --resolve
+              Try to resolve numeric address/ports.
+
+       -a, --all
+              Display  both  listening and non-listening (for TCP this means
+              established connections) sockets.
+
+       -l, --listening
+              Display only listening sockets (these are omitted by default).
+
+       -o, --options
+              Show timer information. For TCP protocol,  the  output  format
+              is:
+
+              timer:(<timer_name>,<expire_time>,<retrans>)
+
+              <timer_name>
+                     the  name  of  the  timer, there are five kind of timer
+                     names:
+
+                     on : means one of these timers: TCP retrans timer,  TCP
+                     early retrans timer and tail loss probe timer
+
+                     keepalive: tcp keep alive timer
+
+                     timewait: timewait stage timer
+
+                     persist: zero window probe timer
+
+                     unknown: none of the above timers
+
+              <expire_time>
+                     how long time the timer will expire
+
+              <retrans>
+                     how many times the retransmission occurred
+
+       -e, --extended
+              Show detailed socket information. The output format is:
+
+              uid:<uid_number> ino:<inode_number> sk:<cookie>
+
+              <uid_number>
+                     the user id the socket belongs to
+
+              <inode_number>
+                     the socket's inode number in VFS

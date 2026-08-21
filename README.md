@@ -1,0 +1,186 @@
+# manbr
+
+Traduz saída de terminal em inglês — man pages, `--help` — para português do
+Brasil, **sem rede**, com um modelo de tradução local.
+
+```console
+$ manbr ss
+SS(8) Manual do Gestor de Sistema SS(8)
+
+NOME
+       ss - outro utilitário para investigar sockets
+
+SINOPSE
+       ss [options] [ FILTER ]
+
+DESCRIÇÃO
+       ss é usado para despejar estatísticas socket. Ele permite mostrar
+       informações semelhantes ao netstat. Ele pode exibir mais informações TCP
+       e estado do que outras ferramentas.
+```
+
+Saída real, não retocada. `SINOPSE` fica em inglês de propósito: a sinopse é
+gramática de comando, tratada como bloco literal e nunca enviada ao modelo.
+
+## O que torna isto diferente de canalizar man por um tradutor
+
+**Nenhuma flag, caminho, variável ou endereço chega ao modelo.** Antes de
+traduzir, cada token de sintaxe é substituído por um marcador opaco; depois da
+tradução, o literal original volta byte a byte. Se o marcador não voltar
+intacto, a tradução é **descartada** e a linha sai em inglês.
+
+Isso é o projeto inteiro. Uma flag traduzida produz um comando inválido que o
+usuário vai copiar e colar — pior que não traduzir.
+
+```
+Use --verbose to list the contents of /etc/services.
+Use --verbose para listar o conteúdo de /etc/services.
+     ^^^^^^^^^                         ^^^^^^^^^^^^^^ intactos, garantidos
+```
+
+A garantia não vem da qualidade do modelo. Vem de mascarar antes e rejeitar
+por código depois.
+
+## Instalação
+
+Requer Python 3.11+ e Linux.
+
+```console
+$ pip install manbr
+$ manbr ss          # na primeira vez, pergunta se pode baixar o modelo
+```
+
+O modelo (~230 MB depois de convertido para int8) vai para
+`~/.local/share/manbr/models/en-pt`, respeitando `XDG_DATA_HOME`. A conversão
+usa `transformers` e `torch`, que só são necessários nessa etapa:
+
+```console
+$ pip install 'manbr[convert]'
+$ python -c 'from manbr.model import download; download()'
+```
+
+## Uso
+
+```console
+$ manbr ss                    # executa `man ss` e traduz
+$ man ss | manbr              # traduz a entrada padrão
+$ nmap --help | manbr         # funciona com qualquer saída de terminal
+$ manbr ss > ss.pt.txt        # texto em stdout, limpo
+```
+
+| opção | efeito |
+|---|---|
+| `--beam N` | feixe da busca (padrão 1; 4 traduz melhor e demora ~2,5× mais) |
+| `--no-cache` | ignora o cache, na leitura e na escrita |
+| `--stats` | estatísticas em stderr ao final |
+| `--model-path P` | usa outro diretório de modelo |
+| `--version` | versão |
+
+Texto traduzido vai **sempre** para stdout; progresso, avisos e estatísticas
+vão **sempre** para stderr. Em terminal, a saída é paginada com `$PAGER`
+(padrão `less -R`); em pipe, sai crua.
+
+Códigos de saída: `0` sucesso, `1` erro de execução, `2` uso inválido,
+`127` página não encontrada, `130` interrompido.
+
+## Desempenho
+
+A primeira tradução de uma página custa caro; as seguintes não.
+
+| | |
+|---|---|
+| `manbr ss` a frio (167 segmentos de prosa) | ~150 s |
+| `manbr ss` com cache quente | **0,3 s** |
+| idem, pelo binário PyInstaller | 3,3 s (2 s são descompactação) |
+| memória, a frio | ~520 MB |
+| memória, com cache quente | ~20 MB |
+| corpus de 20 páginas, a frio | 1219 s |
+| o mesmo corpus, quente | 0,9 s |
+
+O cache fica em `~/.cache/manbr` (respeita `XDG_CACHE_HOME`), é por **segmento**
+e é portável: pode ser gerado numa máquina e copiado para outra. Cada entrada
+guarda o resultado inteiro, então uma segunda execução reproduz até as
+estatísticas.
+
+O cache se invalida sozinho quando o texto muda (a chave é o hash do texto),
+quando o modelo muda, quando o feixe muda ou quando a versão do pipeline é
+incrementada. Não há comando de limpeza porque não é preciso: apagar
+`~/.cache/manbr` é seguro a qualquer momento.
+
+## Limitações conhecidas
+
+**Cerca de 14% dos segmentos de prosa saem em inglês** (101 de 724, medidos
+sobre o corpus de 20 páginas). Não é bug: é a validação funcionando. Um
+segmento é recusado quando
+
+- perde, duplica ou inventa um marcador de sintaxe;
+- contém caractere que o tokenizer do modelo não conhece (`{`, `}`, `|`, `^`);
+- volta com número de sentenças diferente do original;
+- repete uma sentença que aparecia uma vez;
+- perde um colchete, chave ou parêntese.
+
+Quando um parágrafo é recusado, ele é tentado de novo frase a frase, e só as
+frases que falharem ficam em inglês.
+
+Outras limitações, medidas e não escondidas:
+
+- **A qualidade do português é a de um modelo genérico de 2022.** Sai
+  "O daemon bifurca" e "deixa cair o pacote". Não há afinação para texto
+  técnico.
+- **Cabeçalhos de seção vêm de uma tabela** (`manbr/headers.txt`), não do
+  modelo, para que `SEE ALSO` seja sempre `VEJA TAMBÉM`. Cabeçalho fora da
+  tabela fica em inglês.
+- **O glossário é cego a contexto.** `manbr/glossary.txt` devolve termos
+  técnicos ao inglês (`soquete` → `socket`), mas não sabe qual palavra
+  inglesa gerou a portuguesa. Entradas ambíguas foram removidas por medição.
+- **A linha de título perde o alinhamento em colunas.** `SS(8) Manual do
+  Gestor de Sistema SS(8)` sai com espaço simples: a linha é tratada como
+  prosa, e o que volta traduzido não tem como preservar a centralização.
+- **Só inglês → pt-BR.** O par é fixo.
+
+## Como funciona
+
+```
+man ss
+  → normalize   remove overstrike do roff, junta hifenização, colapsa
+                justificação
+  → segment     separa prosa de bloco literal (sinopse, exemplos, tabelas)
+  → mask        troca flags, caminhos, IPs, variáveis, URLs e literais
+                citados por marcadores
+  → translate   CTranslate2 int8, com cache por segmento
+  → validate    marcadores intactos? sentenças preservadas? delimitadores?
+                  sim  → restaura os literais
+                  não  → tenta por sentença; o que falhar sai em inglês
+  → reassemble  remonta o documento, com cabeçalhos traduzidos por tabela
+  → rewrap      requebra a prosa na largura da página (MANWIDTH, padrão 80)
+```
+
+Blocos literais nunca chegam ao modelo.
+
+## Desenvolvimento
+
+```console
+$ python -m venv .venv && .venv/bin/pip install -e '.[dev,convert]'
+$ .venv/bin/pytest                              # 1274 testes
+$ .venv/bin/mypy                                # strict
+$ .venv/bin/mypy --python-version 3.11 manbr    # piso de execução
+```
+
+Testes que precisam do modelo baixado estão marcados `model` e são pulados
+sem ele:
+
+```console
+$ .venv/bin/pytest -m 'not model'
+```
+
+O histórico de decisões de projeto — com as medições que as sustentam — está
+em [`docs/development/`](docs/development/). Vale a leitura antes de mexer nas
+expressões regulares de `mask.py`: quase toda escolha ali é resposta a um
+falso positivo ou falso negativo medido no corpus.
+
+## Licença
+
+MIT. Veja [LICENSE](LICENSE).
+
+O modelo de tradução é `Helsinki-NLP/opus-mt-tc-big-en-pt`, licenciado
+separadamente (CC-BY-4.0) e baixado sob demanda.

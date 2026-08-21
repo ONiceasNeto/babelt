@@ -1,0 +1,200 @@
+awk.txt	1	MAWK(1)                         User commands                        MAWK(1)
+awk.txt	4	       mawk - pattern scanning and text processing language
+awk.txt	26	       be  read in from a file with the -f option.  Data  input is read from
+awk.txt	39	       -v var=value   assigns value to program variable var.
+awk.txt	58	              parameter, and expect no more than one “-” option  on  the  #!
+awk.txt	72	       -W posix
+awk.txt	75	              •   forces mawk not to consider '\n' to be space.
+awk.txt	88	       -W traditional
+awk.txt	101	       “-Wv” both tell mawk to show its version.
+awk.txt	127	       semi-colon.  Long statements can be continued with a backslash, \.  A
+chmod.txt	1	CHMOD(1)                        User Commands                       CHMOD(1)
+chmod.txt	4	       chmod - change file mode bits
+chmod.txt	29	       existing file mode bits of each file; - causes them  to  be  removed;
+chmod.txt	56	       tem  call  cannot  change  their  permissions.  This is not a problem
+chmod.txt	59	       missions of the pointed-to file.  In contrast, chmod ignores symbolic
+chmod.txt	71	       For directories chmod preserves set-user-ID and set-group-ID bits un‐
+chmod.txt	89	       Change  the  mode of each FILE to MODE.  With --reference, change the
+chmod.txt	101	       --no-preserve-root
+chmod.txt	107	       --reference=RFILE
+chmod.txt	120	       '[ugoa]*([-+=]([rwxXst]*|[ugo]))+|[-+=][0-7]+'.
+curl.txt	1	curl(1)                          curl Manual                         curl(1)
+curl.txt	4	       curl - transfer a URL
+curl.txt	23	       If you provide a URL  without  a  leading  protocol://  scheme,  curl
+curl.txt	53	         "http://site.{one,two,three}.com"
+curl.txt	66	         "http://example.com/archive[1996-1999]/vol[1-4]/part{a,b,c}.html"
+curl.txt	84	       with --variable name=content or --variable  name@file  (where  "file"
+curl.txt	91	       string by prefixing it with a backslash, like "\{{".
+curl.txt	98	       provide a default value if it is not set, use  --variable  %name=con‐
+curl.txt	116	       Example: get the contents of a file called $HOME/.secret into a vari‐
+curl.txt	122	         --expand-data "{{fix:trim:url}}"
+dd.txt	1	DD(1)                           User Commands                          DD(1)
+dd.txt	4	       dd - convert and copy a file
+dd.txt	20	       conv=CONVS
+dd.txt	41	       oflag=FLAGS
+dd.txt	55	       c=1, w=2, b=512, kB=1000, K=1024,  MB=1000*1000,  M=1024*1024,  xM=M,
+dd.txt	71	              replace trailing spaces in cbs-size records with newline
+dd.txt	75	       ucase  change lower case to upper case
+dd.txt	102	       append append mode (makes sense only for  output;  conv=notrunc  sug‐
+dd.txt	124	              Request to drop cache.  See also oflag=sync
+dd.txt	145	       GNU coreutils online help: <https://www.gnu.org/software/coreutils/>
+find.txt	1	FIND(1)                    General Commands Manual                   FIND(1)
+find.txt	4	       find - search for files in a directory hierarchy
+find.txt	21	       writable  by  other  users), you should read the `Security Considera‐
+find.txt	37	       This  manual  page  talks about `options' within the expression list.
+find.txt	50	       wildcards  or  dubious path names with either `./' or to use absolute
+find.txt	66	              -noleaf will still be in effect.  If -L is in effect and  find
+find.txt	84	              a symbolic link, and the link can be resolved.  For that situ‐
+find.txt	88	              pointed  to by the symbolic link cannot be examined.  If -H is
+find.txt	106	       bolic  link,  and the -P option is in effect (or if neither -H nor -L
+find.txt	121	       is,  any  symbolic  links appearing after -follow on the command line
+git-log.txt	1	GIT-LOG(1)                       Git Manual                       GIT-LOG(1)
+git-log.txt	12	       List commits that are reachable by following the parent links from
+git-log.txt	38	       Another special notation is "<commit1>...<commit2>" which is useful
+git-log.txt	58	           refs/remotes/ will not be printed. If full is specified, the full
+git-log.txt	72	           override a match in log.excludeDecoration.
+git-log.txt	78	       --clear-decorations
+git-log.txt	101	           Note that this affects all diff-based output types, e.g. those
+git-log.txt	115	           zero or one positive revision arguments, and <start> and <end>
+git-log.txt	130	           •   /regex/
+git-log.txt	142	               lines before or after the line given by <start>.
+grep.txt	1	GREP(1)                         User Commands                        GREP(1)
+grep.txt	4	       grep, egrep, fgrep, rgrep - print lines that match patterns
+grep.txt	32	       -V, --version
+grep.txt	54	       -e PATTERNS, --regexp=PATTERNS
+grep.txt	67	       -i, --ignore-case
+grep.txt	85	              end  of  the  line  or  followed  by  a  non-word  constituent
+grep.txt	92	              For a regular expression pattern, this is like  parenthesizing
+grep.txt	99	              (see above), count non-matching lines.
+grep.txt	120	              grep stops right away without reading input.  A NUM of  -1  is
+grep.txt	140	              error was detected.  Also see the -s or --no-messages option.
+ip.txt	1	IP(8)                               Linux                              IP(8)
+ip.txt	4	       ip  - show / manipulate routing, network devices, interfaces and tun‐
+ip.txt	15	               vrf | mptcp | ioam | stats }
+ip.txt	25	       -V, -Version
+ip.txt	53	       -f, -family <FAMILY>
+ip.txt	75	              the  '\'  character. This is convenient when you want to count
+ip.txt	78	       -r, -resolve
+ip.txt	100	       -c[color][={always|auto|never}
+ip.txt	122	       -br, -brief
+ip.txt	145	       ioam   - manage IOAM namespaces and IOAM schemas.
+iptables.txt	1	IPTABLES(8)                    iptables 1.8.10                   IPTABLES(8)
+iptables.txt	4	       iptables/ip6tables — administration tool for IPv4/IPv6 packet filter‐
+iptables.txt	14	       iptables [-t table] -R chain rulenum rule-specification
+iptables.txt	24	       iptables [-t table] -X [chain]
+iptables.txt	34	       target = -j targetname [per-target-options]
+iptables.txt	58	       a built-in chain is reached or a rule in a built-in chain with target
+iptables.txt	84	                  connection is encountered.  It consists of four built-ins:
+iptables.txt	105	                  connection  tracking  in combination with the NOTRACK tar‐
+iptables.txt	108	                  IP tables.  It provides  the  following  built-in  chains:
+iptables.txt	143	       -C, --check chain rule-specification
+journalctl.txt	1	JOURNALCTL(1)                    journalctl                    JOURNALCTL(1)
+journalctl.txt	4	       journalctl - Print log entries from the systemd journal
+journalctl.txt	21	       structured journal entry. See systemd.journal-fields(7) for a list of
+journalctl.txt	53	       Additional constraints may be added using options --boot, --unit=,
+journalctl.txt	65	       However, by default, only root and users who are members of a few
+journalctl.txt	75	       the left-arrow and right-arrow keys. Paging can be disabled; see the
+journalctl.txt	95	           --user). If neither is specified, show all messages that the user
+journalctl.txt	102	           the Storage= setting in journald.conf(5).
+journalctl.txt	133	       --root=ROOT
+journalctl.txt	146	           indicated disk image. This option is similar to --root=, but
+lsblk.txt	1	LSBLK(8)                    System Administration                   LSBLK(8)
+lsblk.txt	4	       lsblk - list block devices
+lsblk.txt	42	       multi-line cell all mount points associated with the device.
+lsblk.txt	59	           and "1 MiB" are respectively exhibited as "1 K" and "1 M", then
+lsblk.txt	69	           --nodeps /dev/sda prints information about the sda device only.
+lsblk.txt	81	           Exclude the devices specified by the comma-separated list of
+lsblk.txt	95	           device numbers. The filter is applied to the top-level devices
+lsblk.txt	109	           2.34 every device is printed only once if --pairs or --raw not
+lsblk.txt	127	       -n, --noheadings
+lsblk.txt	142	       -P, --pairs
+mount.txt	1	MOUNT(8)                    System Administration                   MOUNT(8)
+mount.txt	4	       mount - mount a filesystem
+mount.txt	15	       mount [-fnrsvw] [-t fstype] [-o options] device mountpoint
+mount.txt	37	       is of type type) at the directory dir. The option -t type is
+mount.txt	61	       exception is --all, in this case already mounted filesystems are
+mount.txt	80	       the case of an NFS mount, device may look like knuth.cwi.nl:/dir.
+mount.txt	85	       filesystem or partition identifiers like UUID or LABEL. Currently
+mount.txt	107	       PARTUUID=uuid
+mount.txt	132	       /dev/disk/by-{label,uuid,id,partuuid,partlabel} udev symlinks in the
+mount.txt	145	       The file /etc/fstab (see fstab(5)), may contain lines describing what
+nmap.txt	1	NMAP(1)                     Nmap Reference Guide                     NMAP(1)
+nmap.txt	4	       nmap - Network exploration tool and security / port scanner
+nmap.txt	34	       probes, but Nmap cannot determine whether they are open or closed.
+nmap.txt	61	           | ssh-hostkey: 1024 8d:60:f1:7c:ca:b7:3d:0a:d6:67:54:9d:69:d9:b9:dd (DSA)
+nmap.txt	78	           11  17.65 ms li86-221.members.linode.com (74.207.244.221)
+nmap.txt	103	             --exclude <host1[,host2][,host3],...>: Exclude hosts/networks
+nmap.txt	114	             --system-dns: Use OS's DNS resolver
+nmap.txt	126	             -p <port ranges>: Only scan specified ports
+nmap.txt	136	             --version-light: Limit to most likely probes (intensity 2)
+nmap.txt	147	             --script-help=<Lua scripts>: Show help about scripts.
+ps.txt	1	PS(1)                           User Commands                          PS(1)
+ps.txt	4	       ps - report a snapshot of the current processes.
+ps.txt	31	       [DD-]hh:mm:ss format (time=TIME), and the executable name (ucmd=CMD).
+ps.txt	70	          ps -eo euser,ruser,suser,fuser,f,comm,label
+ps.txt	84	          ps -C syslogd -o pid=
+ps.txt	86	       Print only the name of PID 42:
+ps.txt	93	              setting  is  BSD-like.   The set of processes selected in this
+ps.txt	108	              conditions (negates the selection).  Identical to -N.
+ps.txt	126	              imposed upon the set of  all  processes  when  some  BSD-style
+ps.txt	140	       123    Identical to --pid 123.
+rsync.txt	1	rsync(1)                        User Commands                       rsync(1)
+rsync.txt	4	       rsync - a fast, versatile, remote (and local) file-copying tool
+rsync.txt	28	       topics) is available at https://download.samba.org/pub/rsync/rsync.1.
+rsync.txt	54	       o      exclude and exclude-from options similar to GNU tar
+rsync.txt	80	       when an rsync:// URL is specified (see also  the  USING  RSYNC-DAEMON
+rsync.txt	85	       tination, the files  are  listed  in  an  output  format  similar  to
+rsync.txt	101	       rsync  daemon-mode  protocol).   For remote transfers, a modern rsync
+rsync.txt	125	       command-line (*.c) into a list of files is handled by the  shell  be‐
+rsync.txt	138	           rsync -avz foo:src/bar/ /data/tmp
+rsync.txt	150	           rsync -av /src/foo/ /dest/foo
+sed.txt	1	SED(1)                          User Commands                         SED(1)
+sed.txt	4	       sed - stream editor for filtering and transforming text
+sed.txt	10	           [-e script] [--expression=script]
+sed.txt	36	       -f script-file, --file=script-file
+sed.txt	48	       -l N, --line-length=N
+sed.txt	66	       --sandbox
+sed.txt	85	       If no -e, --expression, -f, or --file option is given, then the first
+sed.txt	92	       ports to: <bug-sed@gnu.org>.
+sed.txt	101	       This is just a brief synopsis of sed commands to serve as a  reminder
+sed.txt	115	   Zero- or One- address commands
+ss.txt	1	SS(8)                      System Manager's Manual                     SS(8)
+ss.txt	4	       ss - another utility to investigate sockets
+ss.txt	24	       -H, --no-header
+ss.txt	37	       -a, --all
+ss.txt	65	              <expire_time>
+ss.txt	82	              <cookie>
+ss.txt	92	              <rmem_alloc>
+ss.txt	93	                     the memory allocated for receiving packet
+ss.txt	108	                     to  send/receive  packet, the memory in this cache will
+ss.txt	129	       -p, --processes
+ssh.txt	1	SSH(1)                     General Commands Manual                    SSH(1)
+ssh.txt	7	       ssh  [-46AaCfGgKkMNnqsTtVvXxYy] [-B bind_interface] [-b bind_address]
+ssh.txt	14	       ssh [-Q query_option]
+ssh.txt	41	               agent  such as ssh-agent(1).  This can also be specified on a
+ssh.txt	60	       -b bind_address
+ssh.txt	81	               Specifies  a  local “dynamic” application-level port forward‐
+ssh.txt	85	               the  connection is forwarded over the secure channel, and the
+ssh.txt	116	               Specifies an alternative per-user configuration file.   If  a
+ssh.txt	126	               implies -n.  The recommended way to start X11 programs  at  a
+ssh.txt	147	       -i identity_file
+systemctl.txt	1	SYSTEMCTL(1)                      systemctl                     SYSTEMCTL(1)
+systemctl.txt	4	       systemctl - Control the systemd system and service manager
+systemctl.txt	42	                 sys-module-fuse.device       loaded active plugged /sys/module/fuse
+systemctl.txt	49	                 systemd-tmpfiles-clean.timer loaded active waiting Daily Cleanup of Temporary Directories
+systemctl.txt	56	               To show all installed unit files use 'systemctl list-unit-files'.
+systemctl.txt	68	           states is not constant and new systemd releases may both add and
+systemctl.txt	78	       list-automounts [PATTERN...]
+systemctl.txt	99	               /run/systemd/ask-password      DirectoryNotEmpty systemd-ask-password-plymouth.path systemd-ask-password-plymouth.service
+systemctl.txt	115	               /dev/initctl     systemd-initctl.socket      systemd-initctl.service
+systemctl.txt	136	               Sun 2017-02-26 18:55:42 EST  1min 14s left Thu 2017-02-23 13:54:44 EST  3 days ago systemd-tmpfiles-clean.timer systemd-tmpfiles-clean.service
+tar.txt	1	TAR(1)                         GNU TAR Manual                         TAR(1)
+tar.txt	4	       tar - an archiving utility
+tar.txt	15	       tar -d [-f ARCHIVE] [OPTIONS] [FILE...]
+tar.txt	26	       tar {--catenate|--concatenate} [OPTIONS] --file ARCHIVE ARCHIVE...
+tar.txt	36	       tar --list [--file ARCHIVE] [OPTIONS] [MEMBER...]
+tar.txt	83	       files from the directory /etc into the  archive  file  etc.tar,  ver‐
+tar.txt	92	       tion  takes an optional argument, the argument must follow the option
+tar.txt	98	       ter, e.g. -vkpf a.tar.
+tar.txt	118	       tar --create --file etc.tar --verbose /etc
+tar.txt	138	              only when using the -i (--ignore-zeros) option.

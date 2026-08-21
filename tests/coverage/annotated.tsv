@@ -1,0 +1,227 @@
+# Anotação manual da amostra de cobertura. Formato: arquivo<TAB>linha<TAB>token
+#
+# REGRA DE ANOTAÇÃO
+# Anotado: todo token que, se traduzido ou perdido, produziria um comando
+# inválido E cuja forma o marca como não-prosa — flags, --, caminhos, IPs,
+# URLs, variáveis, blocos <...>, expressões sed, globs, operandos chave=valor,
+# nomes de unidade/arquivo com extensão, e escapes como \n.
+#
+# Fora de escopo (documentado no README-fase1.1): argumentos que são palavras
+# nuas, sem sigilo que os distinga de prosa — "posix" em `-W posix`, "sync" em
+# `conv=sync`, subcomandos como `list-unit-files`, metavariáveis como ARCHIVE
+# ou FILE. Nenhum padrão de forma os separa de prosa traduzível, então não são
+# alvo da fase 1 e anotá-los mediria uma ambição que o projeto não tem.
+#
+# Datas, horas e dados de exemplo em blocos de saída também não são anotados;
+# endereços (IP, host) dentro desses blocos são.
+#
+# CORREÇÃO (fase 1.2): três operandos chave=valor tinham escapado da anotação
+# original — var=value, name=content e %name=content — enquanto 17 outros da
+# mesma classe (conv=CONVS, time=TIME, pid=...) estavam anotados. Eram
+# inconsistência da anotação, não acerto do mascarador; apareceram como
+# "candidatos a falso positivo" quando o padrão chave=valor entrou. Corrigidos
+# aqui. O README-fase1.2 reporta o recall com e sem esta correção.
+#
+# CORREÇÃO (fase 2.1): o padrão de literal entre aspas revelou cinco literais
+# citados que a anotação não tinha — "file", "1 MiB", "1 K", "1 M" e
+# 'systemctl list-unit-files'. Os quatro primeiros são valores literais; o
+# último é um comando, que a regra da fase 1.1 excluía por ser "palavra nua"
+# — as aspas são justamente a marca de forma que faltava. Anotados.
+#
+# NÃO anotado de propósito: “dynamic” (ssh.txt:81). É termo de prosa entre
+# aspas de ênfase, não literal. Fica como candidato a falso positivo para que
+# a medição continue mostrando o custo real do padrão de aspas.
+awk.txt	26	-f
+awk.txt	39	-v
+awk.txt	39	var=value
+awk.txt	58	-
+awk.txt	72	-W
+awk.txt	75	\n
+awk.txt	88	-W
+awk.txt	101	-Wv
+awk.txt	127	\
+chmod.txt	29	-
+chmod.txt	89	--reference
+chmod.txt	101	--no-preserve-root
+chmod.txt	107	--reference=RFILE
+chmod.txt	120	[ugoa]*([-+=]([rwxXst]*|[ugo]))+|[-+=][0-7]+
+curl.txt	23	protocol://
+curl.txt	53	http://site.{one,two,three}.com
+curl.txt	66	http://example.com/archive[1996-1999]/vol[1-4]/part{a,b,c}.html
+curl.txt	84	--variable
+curl.txt	84	name=content
+curl.txt	84	"file"
+curl.txt	91	\{{
+curl.txt	98	--variable
+curl.txt	98	%name=con‐
+curl.txt	116	$HOME/.secret
+curl.txt	122	--expand-data
+curl.txt	122	{{fix:trim:url}}
+dd.txt	20	conv=CONVS
+dd.txt	41	oflag=FLAGS
+dd.txt	55	c=1
+dd.txt	55	w=2
+dd.txt	55	b=512
+dd.txt	55	kB=1000
+dd.txt	55	K=1024
+dd.txt	55	MB=1000*1000
+dd.txt	55	M=1024*1024
+dd.txt	55	xM=M
+dd.txt	102	conv=notrunc
+dd.txt	124	oflag=sync
+dd.txt	145	<https://www.gnu.org/software/coreutils/>
+find.txt	50	./
+find.txt	66	-noleaf
+find.txt	66	-L
+find.txt	88	-H
+find.txt	106	-P
+find.txt	106	-H
+find.txt	106	-L
+find.txt	121	-follow
+git-log.txt	38	<commit1>
+git-log.txt	38	<commit2>
+git-log.txt	58	refs/remotes/
+git-log.txt	72	log.excludeDecoration
+git-log.txt	78	--clear-decorations
+git-log.txt	115	<start>
+git-log.txt	115	<end>
+git-log.txt	130	/regex/
+git-log.txt	142	<start>
+grep.txt	32	-V
+grep.txt	32	--version
+grep.txt	54	-e
+grep.txt	54	--regexp=PATTERNS
+grep.txt	67	-i
+grep.txt	67	--ignore-case
+grep.txt	140	-s
+grep.txt	140	--no-messages
+ip.txt	25	-V
+ip.txt	25	-Version
+ip.txt	53	-f
+ip.txt	53	-family
+ip.txt	53	<FAMILY>
+ip.txt	75	\
+ip.txt	78	-r
+ip.txt	78	-resolve
+ip.txt	100	-c[color][={always|auto|never}
+ip.txt	122	-br
+ip.txt	122	-brief
+iptables.txt	14	-t
+iptables.txt	14	-R
+iptables.txt	24	-t
+iptables.txt	24	-X
+iptables.txt	34	-j
+iptables.txt	143	-C
+iptables.txt	143	--check
+journalctl.txt	53	--boot
+journalctl.txt	53	--unit=
+journalctl.txt	95	--user
+journalctl.txt	102	Storage=
+journalctl.txt	102	journald.conf
+journalctl.txt	133	--root=ROOT
+journalctl.txt	146	--root=
+lsblk.txt	59	"1 MiB"
+lsblk.txt	59	"1 K"
+lsblk.txt	59	"1 M"
+lsblk.txt	69	--nodeps
+lsblk.txt	69	/dev/sda
+lsblk.txt	109	--pairs
+lsblk.txt	109	--raw
+lsblk.txt	127	-n
+lsblk.txt	127	--noheadings
+lsblk.txt	142	-P
+lsblk.txt	142	--pairs
+mount.txt	15	-fnrsvw
+mount.txt	15	-t
+mount.txt	15	-o
+mount.txt	37	-t
+mount.txt	61	--all
+mount.txt	80	knuth.cwi.nl:/dir
+mount.txt	107	PARTUUID=uuid
+mount.txt	132	/dev/disk/by-{label,uuid,id,partuuid,partlabel}
+mount.txt	145	/etc/fstab
+nmap.txt	78	li86-221.members.linode.com
+nmap.txt	78	74.207.244.221
+nmap.txt	103	--exclude
+nmap.txt	103	<host1[,host2][,host3],...>
+nmap.txt	114	--system-dns
+nmap.txt	126	-p
+nmap.txt	126	<port ranges>
+nmap.txt	136	--version-light
+nmap.txt	147	--script-help=<Lua scripts>
+ps.txt	31	[DD-]hh:mm:ss
+ps.txt	31	time=TIME
+ps.txt	31	ucmd=CMD
+ps.txt	70	-eo
+ps.txt	84	-C
+ps.txt	84	-o
+ps.txt	84	pid=
+ps.txt	108	-N
+ps.txt	140	--pid
+rsync.txt	28	https://download.samba.org/pub/rsync/rsync.1
+rsync.txt	80	rsync://
+rsync.txt	125	*.c
+rsync.txt	138	-avz
+rsync.txt	138	foo:src/bar/
+rsync.txt	138	/data/tmp
+rsync.txt	150	-av
+rsync.txt	150	/src/foo/
+rsync.txt	150	/dest/foo
+sed.txt	10	-e
+sed.txt	10	--expression=script
+sed.txt	36	-f
+sed.txt	36	--file=script-file
+sed.txt	48	-l
+sed.txt	48	--line-length=N
+sed.txt	66	--sandbox
+sed.txt	85	-e
+sed.txt	85	--expression
+sed.txt	85	-f
+sed.txt	85	--file
+sed.txt	92	<bug-sed@gnu.org>
+ss.txt	24	-H
+ss.txt	24	--no-header
+ss.txt	37	-a
+ss.txt	37	--all
+ss.txt	65	<expire_time>
+ss.txt	82	<cookie>
+ss.txt	92	<rmem_alloc>
+ss.txt	129	-p
+ss.txt	129	--processes
+ssh.txt	7	-46AaCfGgKkMNnqsTtVvXxYy
+ssh.txt	7	-B
+ssh.txt	7	-b
+ssh.txt	14	-Q
+ssh.txt	60	-b
+ssh.txt	126	-n
+ssh.txt	147	-i
+systemctl.txt	56	'systemctl list-unit-files'
+systemctl.txt	42	sys-module-fuse.device
+systemctl.txt	42	/sys/module/fuse
+systemctl.txt	49	systemd-tmpfiles-clean.timer
+systemctl.txt	99	/run/systemd/ask-password
+systemctl.txt	99	systemd-ask-password-plymouth.path
+systemctl.txt	99	systemd-ask-password-plymouth.service
+systemctl.txt	115	/dev/initctl
+systemctl.txt	115	systemd-initctl.socket
+systemctl.txt	115	systemd-initctl.service
+systemctl.txt	136	systemd-tmpfiles-clean.timer
+systemctl.txt	136	systemd-tmpfiles-clean.service
+tar.txt	15	-d
+tar.txt	15	-f
+tar.txt	26	--catenate
+tar.txt	26	--concatenate
+tar.txt	26	--file
+tar.txt	36	--list
+tar.txt	36	--file
+tar.txt	83	/etc
+tar.txt	83	etc.tar
+tar.txt	98	-vkpf
+tar.txt	98	a.tar
+tar.txt	118	--create
+tar.txt	118	--file
+tar.txt	118	etc.tar
+tar.txt	118	--verbose
+tar.txt	118	/etc
+tar.txt	138	-i
+tar.txt	138	--ignore-zeros

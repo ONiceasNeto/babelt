@@ -1,0 +1,160 @@
+TAR(1)                         GNU TAR Manual                         TAR(1)
+
+NAME
+       tar - an archiving utility
+
+SYNOPSIS
+   Traditional usage
+       tar {A|c|d|r|t|u|x}[GnSkUWOmpsMBiajJzZhPlRvwo] [ARG...]
+
+   UNIX-style usage
+       tar -A [OPTIONS] -f ARCHIVE ARCHIVE...
+
+       tar -c [-f ARCHIVE] [OPTIONS] [FILE...]
+
+       tar -d [-f ARCHIVE] [OPTIONS] [FILE...]
+
+       tar -r [-f ARCHIVE] [OPTIONS] [FILE...]
+
+       tar -t [-f ARCHIVE] [OPTIONS] [MEMBER...]
+
+       tar -u [-f ARCHIVE] [OPTIONS] [FILE...]
+
+       tar -x [-f ARCHIVE] [OPTIONS] [MEMBER...]
+
+   GNU-style usage
+       tar {--catenate|--concatenate} [OPTIONS] --file ARCHIVE ARCHIVE...
+
+       tar --create [--file ARCHIVE] [OPTIONS] [FILE...]
+
+       tar {--diff|--compare} [--file ARCHIVE] [OPTIONS] [FILE...]
+
+       tar --delete [--file ARCHIVE] [OPTIONS] [MEMBER...]
+
+       tar --append [--file ARCHIVE] [OPTIONS] [FILE...]
+
+       tar --list [--file ARCHIVE] [OPTIONS] [MEMBER...]
+
+       tar --test-label [--file ARCHIVE] [OPTIONS] [LABEL...]
+
+       tar --update [--file ARCHIVE] [OPTIONS] [FILE...]
+
+       tar {--extract|--get} [--file ARCHIVE] [OPTIONS] [MEMBER...]
+
+NOTE
+       This  manpage is a short description of GNU tar.  For a detailed dis‐
+       cussion, including examples and usage recommendations, refer  to  the
+       GNU  Tar  Manual available in texinfo format.  If the info reader and
+       the tar documentation are properly installed on your system, the com‐
+       mand
+
+           info tar
+
+       should give you access to the complete manual.
+
+       You can also view the manual using the info mode in emacs(1), or find
+       it in various formats online at
+
+           https://www.gnu.org/software/tar/manual
+
+       If any discrepancies occur between this manpage and the GNU Tar  Man‐
+       ual, the later shall be considered the authoritative source.
+
+DESCRIPTION
+       GNU tar is an archiving program designed to store multiple files in a
+       single  file  (an  archive),  and  to  manipulate such archives.  The
+       archive can be either a regular file or a device (e.g. a tape  drive,
+       hence the name of the program, which stands for tape archiver), which
+       can be located either on the local or on a remote machine.
+
+   Option styles
+       Options to GNU tar can be given in three different styles.  In tradi‐
+       tional  style,  the first argument is a cluster of option letters and
+       all subsequent arguments supply arguments to those options  that  re‐
+       quire  them.   The arguments are read in the same order as the option
+       letters.  Any command line words that remain after all  options  have
+       been  processed  are treated as non-option arguments: file or archive
+       member names.
+
+       For example, the c option requires creating the archive, the v option
+       requests the verbose operation, and the f option  takes  an  argument
+       that  sets  the  name  of the archive to operate upon.  The following
+       command, written in the traditional style, instructs tar to store all
+       files from the directory /etc into the  archive  file  etc.tar,  ver‐
+       bosely listing the files being archived:
+
+       tar cfv etc.tar /etc
+
+       In  UNIX or short-option style, each option letter is prefixed with a
+       single dash, as in other command line utilities.  If an option  takes
+       an  argument,  the  argument follows it, either as a separate command
+       line word, or immediately following the option.  However, if the  op‐
+       tion  takes an optional argument, the argument must follow the option
+       letter without any intervening whitespace, as in -g/tmp/snar.db.
+
+       Any number of options not taking arguments can be clustered  together
+       after  a  single  dash,  e.g. -vkp.  An option that takes an argument
+       (whether mandatory or optional) can appear at the end of such a clus‐
+       ter, e.g. -vkpf a.tar.
+
+       The example command above written in  the  short-option  style  could
+       look like:
+
+       tar -cvf etc.tar /etc
+       or
+       tar -c -v -f etc.tar /etc
+
+       In  GNU  or long-option style, each option begins with two dashes and
+       has a meaningful name, consisting of lower-case letters  and  dashes.
+       When used, the long option can be abbreviated to its initial letters,
+       provided  that this does not create ambiguity.  Arguments to long op‐
+       tions are supplied either as a separate command  line  word,  immedi‐
+       ately following the option, or separated from the option by an equals
+       sign  with no intervening whitespace.  Optional arguments must always
+       use the latter method.
+
+       Here are several ways of writing the example command in this style:
+
+       tar --create --file etc.tar --verbose /etc
+       or (abbreviating some options):
+       tar --cre --file=etc.tar --verb /etc
+
+       The options in all three styles can be intermixed, although doing  so
+       with old options is not encouraged.
+
+   Operation mode
+       The  options listed in the table below tell GNU tar what operation it
+       is to perform.  Exactly one of them must be given.   The  meaning  of
+       non-option arguments depends on the operation mode requested.
+
+       -A, --catenate, --concatenate
+              Append  archives to the end of another archive.  The arguments
+              are treated as the names of archives to append.  All  archives
+              must  be  of  the same format as the archive they are appended
+              to, otherwise the resulting archive  might  be  unusable  with
+              non-GNU  implementations  of  tar.  Notice also that when more
+              than one archive is given, the  members  from  archives  other
+              than the first one will be accessible in the resulting archive
+              only when using the -i (--ignore-zeros) option.
+
+              Compressed archives cannot be concatenated.
+
+       -c, --create
+              Create a new archive.  Arguments supply the names of the files
+              to  be archived.  Directories are archived recursively, unless
+              the --no-recursion option is given.
+
+       -d, --diff, --compare
+              Find differences between archive and file system.   The  argu‐
+              ments are optional and specify archive members to compare.  If
+              not given, the current working directory is assumed.
+
+       --delete
+              Delete  from  the  archive.  The arguments supply names of the
+              archive members to be removed.  At least one argument must  be
+              given.
+
+              This option does not operate on compressed archives.  There is
+              no short option equivalent.
+
+       -r, --append

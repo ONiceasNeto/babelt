@@ -1,0 +1,52 @@
+# Termos que o modelo traduz e não deveria.
+# Formato: TRADUZIDO<TAB>INGLÊS. # começa comentário; linha vazia é ignorada.
+#
+# Aplicado DEPOIS da tradução e ANTES do restore. Não é placeholder de
+# propósito: se "socket" virasse ⟦n⟧ antes da tradução, o modelo perderia o
+# sentido da palavra e a frase em volta sairia pior. Ele precisa ver "socket"
+# para concordar género e número; só depois a palavra volta ao inglês.
+#
+# A substituição respeita fronteira de palavra e ignora caixa. Entradas aqui
+# são caras: cada uma pode acertar num contexto e errar noutro. Ver a seção
+# do README-fase3 sobre onde o glossário piorou o resultado.
+
+# Plurais são entradas próprias, não regra: a substituição é literal e
+# previsível, e uma regra de plural em português erraria em 'anfitriões'.
+#
+# REMOVIDO por medição: núcleo->kernel. O modelo já devolve "kernel" sozinho,
+# então a entrada nunca ajudava; e "core" (comum em man page: core dump,
+# "files named core") vira "núcleo", que a entrada transformava em "kernel" —
+# uma corrupção onde antes havia tradução certa. Ver README-fase3.
+#
+# --- termos que têm palavra comum em português e viram outra coisa ---
+tomada	socket
+tomadas	sockets
+soquete	socket
+soquetes	sockets
+concha	shell
+conchas	shells
+casca	shell
+bandeira	flag
+bandeiras	flags
+anfitrião	host
+anfitriões	hosts
+hospedeiro	host
+hospedeiros	hosts
+cano	pipe
+canos	pipes
+tubo	pipe
+tubos	pipes
+tubulação	pipeline
+condutor	driver
+condutores	drivers
+motorista	driver
+motoristas	drivers
+corda	string
+cordas	strings
+fio	thread
+fios	threads
+duende	daemon
+duendes	daemons
+demónio	daemon
+demônio	daemon
+demônios	daemons

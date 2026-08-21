@@ -1,0 +1,160 @@
+GIT-LOG(1)                       Git Manual                       GIT-LOG(1)
+
+NAME
+       git-log - Show commit logs
+
+SYNOPSIS
+       git log [<options>] [<revision-range>] [[--] <path>...]
+
+DESCRIPTION
+       Shows the commit logs.
+
+       List commits that are reachable by following the parent links from
+       the given commit(s), but exclude commits that are reachable from the
+       one(s) given with a ^ in front of them. The output is given in
+       reverse chronological order by default.
+
+       You can think of this as a set operation. Commits reachable from any
+       of the commits given on the command line form a set, and then commits
+       reachable from any of the ones given with ^ in front are subtracted
+       from that set. The remaining commits are what comes out in the
+       command’s output. Various other options and paths parameters can be
+       used to further limit the result.
+
+       Thus, the following command:
+
+           $ git log foo bar ^baz
+
+       means "list all the commits which are reachable from foo or bar, but
+       not from baz".
+
+       A special notation "<commit1>..<commit2>" can be used as a short-hand
+       for "^<commit1> <commit2>". For example, either of the following may
+       be used interchangeably:
+
+           $ git log origin..HEAD
+           $ git log HEAD ^origin
+
+       Another special notation is "<commit1>...<commit2>" which is useful
+       for merges. The resulting set of commits is the symmetric difference
+       between the two operands. The following two commands are equivalent:
+
+           $ git log A B --not $(git merge-base --all A B)
+           $ git log A...B
+
+       The command takes options applicable to the git-rev-list(1) command
+       to control what is shown and how, and options applicable to the git-
+       diff(1) command to control how the changes each commit introduces are
+       shown.
+
+OPTIONS
+       --follow
+           Continue listing the history of a file beyond renames (works only
+           for a single file).
+
+       --no-decorate, --decorate[=short|full|auto|no]
+           Print out the ref names of any commits that are shown. If short
+           is specified, the ref name prefixes refs/heads/, refs/tags/ and
+           refs/remotes/ will not be printed. If full is specified, the full
+           ref name (including prefix) will be printed. If auto is
+           specified, then if the output is going to a terminal, the ref
+           names are shown as if short were given, otherwise no ref names
+           are shown. The option --decorate is short-hand for
+           --decorate=short. Default to configuration value of log.decorate
+           if configured, otherwise, auto.
+
+       --decorate-refs=<pattern>, --decorate-refs-exclude=<pattern>
+           For each candidate reference, do not use it for decoration if it
+           matches any patterns given to --decorate-refs-exclude or if it
+           doesn’t match any of the patterns given to --decorate-refs. The
+           log.excludeDecoration config option allows excluding refs from
+           the decorations, but an explicit --decorate-refs pattern will
+           override a match in log.excludeDecoration.
+
+           If none of these options or config settings are given, then
+           references are used as decoration if they match HEAD,
+           refs/heads/, refs/remotes/, refs/stash/, or refs/tags/.
+
+       --clear-decorations
+           When specified, this option clears all previous --decorate-refs
+           or --decorate-refs-exclude options and relaxes the default
+           decoration filter to include all references. This option is
+           assumed if the config value log.initialDecorationSet is set to
+           all.
+
+       --source
+           Print out the ref name given on the command line by which each
+           commit was reached.
+
+       --[no-]mailmap, --[no-]use-mailmap
+           Use mailmap file to map author and committer names and email
+           addresses to canonical real names and email addresses. See git-
+           shortlog(1).
+
+       --full-diff
+           Without this flag, git log -p <path>...  shows commits that touch
+           the specified paths, and diffs about the same specified paths.
+           With this, the full diff is shown for commits that touch the
+           specified paths; this means that "<path>..." limits only commits,
+           and doesn’t limit diff for those commits.
+
+           Note that this affects all diff-based output types, e.g. those
+           produced by --stat, etc.
+
+       --log-size
+           Include a line “log size <number>” in the output for each commit,
+           where <number> is the length of that commit’s message in bytes.
+           Intended to speed up tools that read log messages from git log
+           output by allowing them to allocate space in advance.
+
+       -L<start>,<end>:<file>, -L:<funcname>:<file>
+           Trace the evolution of the line range given by <start>,<end>, or
+           by the function name regex <funcname>, within the <file>. You may
+           not give any pathspec limiters. This is currently limited to a
+           walk starting from a single revision, i.e., you may only give
+           zero or one positive revision arguments, and <start> and <end>
+           (or <funcname>) must exist in the starting revision. You can
+           specify this option more than once. Implies --patch. Patch output
+           can be suppressed using --no-patch, but other diff formats
+           (namely --raw, --numstat, --shortstat, --dirstat, --summary,
+           --name-only, --name-status, --check) are not currently
+           implemented.
+
+           <start> and <end> can take one of these forms:
+
+           •   number
+
+               If <start> or <end> is a number, it specifies an absolute
+               line number (lines count from 1).
+
+           •   /regex/
+
+               This form will use the first line matching the given POSIX
+               regex. If <start> is a regex, it will search from the end of
+               the previous -L range, if any, otherwise from the start of
+               file. If <start> is ^/regex/, it will search from the start
+               of file. If <end> is a regex, it will search starting at the
+               line given by <start>.
+
+           •   +offset or -offset
+
+               This is only valid for <end> and will specify a number of
+               lines before or after the line given by <start>.
+
+           If :<funcname> is given in place of <start> and <end>, it is a
+           regular expression that denotes the range from the first funcname
+           line that matches <funcname>, up to the next funcname line.
+           :<funcname> searches from the end of the previous -L range, if
+           any, otherwise from the start of file.  ^:<funcname> searches
+           from the start of file. The function names are determined in the
+           same way as git diff works out patch hunk headers (see Defining a
+           custom hunk-header in gitattributes(5)).
+
+       <revision-range>
+           Show only commits in the specified revision range. When no
+           <revision-range> is specified, it defaults to HEAD (i.e. the
+           whole history leading to the current commit).  origin..HEAD
+           specifies all the commits reachable from the current commit (i.e.
+           HEAD), but not from origin. For a complete list of ways to spell
+           <revision-range>, see the Specifying Ranges section of
+           gitrevisions(7).

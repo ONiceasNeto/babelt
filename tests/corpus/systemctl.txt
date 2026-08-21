@@ -1,0 +1,160 @@
+SYSTEMCTL(1)                      systemctl                     SYSTEMCTL(1)
+
+NAME
+       systemctl - Control the systemd system and service manager
+
+SYNOPSIS
+
+       systemctl [OPTIONS...] COMMAND [UNIT...]
+
+DESCRIPTION
+       systemctl may be used to introspect and control the state of the
+       "systemd" system and service manager. Please refer to systemd(1) for
+       an introduction into the basic concepts and functionality this tool
+       manages.
+
+COMMANDS
+       The following commands are understood:
+
+   Unit Commands (Introspection and Modification)
+       list-units [PATTERN...]
+           List units that systemd currently has in memory. This includes
+           units that are either referenced directly or through a
+           dependency, units that are pinned by applications
+           programmatically, or units that were active in the past and have
+           failed. By default only units which are active, have pending
+           jobs, or have failed are shown; this can be changed with option
+           --all. If one or more PATTERNs are specified, only units matching
+           one of them are shown. The units that are shown are additionally
+           filtered by --type= and --state= if those options are specified.
+
+           Note that this command does not show unit templates, but only
+           instances of unit templates. Units templates that aren't
+           instantiated are not runnable, and will thus never show up in the
+           output of this command. Specifically this means that foo@.service
+           will never be shown in this list — unless instantiated, e.g. as
+           foo@bar.service. Use list-unit-files (see below) for listing
+           installed unit template files.
+
+           Produces output similar to
+
+                 UNIT                         LOAD   ACTIVE SUB     DESCRIPTION
+                 sys-module-fuse.device       loaded active plugged /sys/module/fuse
+                 -.mount                      loaded active mounted Root Mount
+                 boot-efi.mount               loaded active mounted /boot/efi
+                 systemd-journald.service     loaded active running Journal Service
+                 systemd-logind.service       loaded active running Login Service
+               ● user@1000.service            loaded failed failed  User Manager for UID 1000
+                 ...
+                 systemd-tmpfiles-clean.timer loaded active waiting Daily Cleanup of Temporary Directories
+
+               LOAD   = Reflects whether the unit definition was properly loaded.
+               ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+               SUB    = The low-level unit activation state, values depend on unit type.
+
+               123 loaded units listed. Pass --all to see loaded but inactive units, too.
+               To show all installed unit files use 'systemctl list-unit-files'.
+
+           The header and the last unit of a given type are underlined if
+           the terminal supports that. A colored dot is shown next to
+           services which were masked, not found, or otherwise failed.
+
+           The LOAD column shows the load state, one of loaded, not-found,
+           bad-setting, error, masked. The ACTIVE columns shows the general
+           unit state, one of active, reloading, inactive, failed,
+           activating, deactivating. The SUB column shows the
+           unit-type-specific detailed state of the unit, possible values
+           vary by unit type. The list of possible LOAD, ACTIVE, and SUB
+           states is not constant and new systemd releases may both add and
+           remove values.
+
+               systemctl --state=help
+
+           command may be used to display the current set of possible
+           values.
+
+           This is the default command.
+
+       list-automounts [PATTERN...]
+           List automount units currently in memory, ordered by mount path.
+           If one or more PATTERNs are specified, only automount units
+           matching one of them are shown. Produces output similar to
+
+               WHAT        WHERE                    MOUNTED IDLE TIMEOUT UNIT
+               /dev/sdb1   /mnt/test                no      120s         mnt-test.automount
+               binfmt_misc /proc/sys/fs/binfmt_misc yes     0            proc-sys-fs-binfmt_misc.automount
+
+               2 automounts listed.
+
+           Also see --show-types, --all, and --state=.
+
+           Added in version 252.
+
+       list-paths [PATTERN...]
+           List path units currently in memory, ordered by path. If one or
+           more PATTERNs are specified, only path units matching one of them
+           are shown. Produces output similar to
+
+               PATH                           CONDITION         UNIT                               ACTIVATES
+               /run/systemd/ask-password      DirectoryNotEmpty systemd-ask-password-plymouth.path systemd-ask-password-plymouth.service
+               /run/systemd/ask-password      DirectoryNotEmpty systemd-ask-password-wall.path     systemd-ask-password-wall.service
+               /var/cache/cups/org.cups.cupsd PathExists        cups.path                          cups.service
+
+               3 paths listed.
+
+           Also see --show-types, --all, and --state=.
+
+           Added in version 254.
+
+       list-sockets [PATTERN...]
+           List socket units currently in memory, ordered by listening
+           address. If one or more PATTERNs are specified, only socket units
+           matching one of them are shown. Produces output similar to
+
+               LISTEN           UNIT                        ACTIVATES
+               /dev/initctl     systemd-initctl.socket      systemd-initctl.service
+               ...
+               [::]:22          sshd.socket                 sshd.service
+               kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
+
+               5 sockets listed.
+
+           Note: because the addresses might contains spaces, this output is
+           not suitable for programmatic consumption.
+
+           Also see --show-types, --all, and --state=.
+
+           Added in version 202.
+
+       list-timers [PATTERN...]
+           List timer units currently in memory, ordered by the time they
+           elapse next. If one or more PATTERNs are specified, only units
+           matching one of them are shown. Produces output similar to
+
+               NEXT                         LEFT          LAST                         PASSED     UNIT                         ACTIVATES
+               -                            -             Thu 2017-02-23 13:40:29 EST  3 days ago ureadahead-stop.timer        ureadahead-stop.service
+               Sun 2017-02-26 18:55:42 EST  1min 14s left Thu 2017-02-23 13:54:44 EST  3 days ago systemd-tmpfiles-clean.timer systemd-tmpfiles-clean.service
+               Sun 2017-02-26 20:37:16 EST  1h 42min left Sun 2017-02-26 11:56:36 EST  6h ago     apt-daily.timer              apt-daily.service
+               Sun 2017-02-26 20:57:49 EST  2h 3min left  Sun 2017-02-26 11:56:36 EST  6h ago     snapd.refresh.timer          snapd.refresh.service
+
+           NEXT shows the next time the timer will run.
+
+           LEFT shows how long till the next time the timer runs.
+
+           LAST shows the last time the timer ran.
+
+           PASSED shows how long has passed since the timer last ran.
+
+           UNIT shows the name of the timer
+
+           ACTIVATES shows the name the service the timer activates when it
+           runs.
+
+           Also see --all and --state=.
+
+           Added in version 209.
+
+       is-active PATTERN...
+           Check whether any of the specified units are active (i.e.
+           running). Returns an exit code 0 if at least one is active, or
+           non-zero otherwise. Unless --quiet is specified, this will also

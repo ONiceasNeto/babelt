@@ -1,0 +1,80 @@
+_S_S(8)                      System Manager's Manual                     _S_S(8)
+
+NNAAMMEE
+       ss - another utility to investigate sockets
+
+SSYYNNOOPPSSIISS
+       ssss [_o_p_t_i_o_n_s] _[ _F_I_L_T_E_R _]
+
+DDEESSCCRRIIPPTTIIOONN
+       ssss  is  used to dump socket statistics. It allows showing information
+       similar to _n_e_t_s_t_a_t.  It can display more TCP  and  state  information
+       than other tools.
+
+OOPPTTIIOONNSS
+       When no option is used ss displays a list of open non-listening sock‐
+       ets (e.g. TCP/UNIX/UDP) that have established connection.
+
+       --hh,, ----hheellpp
+              Show summary of options.
+
+       --VV,, ----vveerrssiioonn
+              Output version information.
+
+       --HH,, ----nnoo--hheeaaddeerr
+              Suppress header line.
+
+       --OO,, ----oonneelliinnee
+              Print each socket's data on a single line.
+
+       --nn,, ----nnuummeerriicc
+              Do not try to resolve service names. Show exact bandwidth val‐
+              ues, instead of human-readable.
+
+       --rr,, ----rreessoollvvee
+              Try to resolve numeric address/ports.
+
+       --aa,, ----aallll
+              Display  both  listening and non-listening (for TCP this means
+              established connections) sockets.
+
+       --ll,, ----lliisstteenniinngg
+              Display only listening sockets (these are omitted by default).
+
+       --oo,, ----ooppttiioonnss
+              Show timer information. For TCP protocol,  the  output  format
+              is:
+
+              timer:(<timer_name>,<expire_time>,<retrans>)
+
+              <<ttiimmeerr__nnaammee>>
+                     the  name  of  the  timer, there are five kind of timer
+                     names:
+
+                     oonn : means one of these timers: TCP retrans timer,  TCP
+                     early retrans timer and tail loss probe timer
+
+                     kkeeeeppaalliivvee: tcp keep alive timer
+
+                     ttiimmeewwaaiitt: timewait stage timer
+
+                     ppeerrssiisstt: zero window probe timer
+
+                     uunnkknnoowwnn: none of the above timers
+
+              <<eexxppiirree__ttiimmee>>
+                     how long time the timer will expire
+
+              <<rreettrraannss>>
+                     how many times the retransmission occurred
+
+       --ee,, ----eexxtteennddeedd
+              Show detailed socket information. The output format is:
+
+              uid:<uid_number> ino:<inode_number> sk:<cookie>
+
+              <<uuiidd__nnuummbbeerr>>
+                     the user id the socket belongs to
+
+              <<iinnooddee__nnuummbbeerr>>
+                     the socket's inode number in VFS
