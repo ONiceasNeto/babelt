@@ -1,0 +1,28 @@
+# Termos que NUNCA devem chegar ao modelo. Um por linha; # é comentário.
+#
+# Isto não é o glossário, e a diferença é a classe de falha.
+#
+# O glossário (glossary.txt) trata do termo que o modelo traduz **bem, mas de
+# forma indesejada**: "socket" vira "tomada", que é uma tradução correta e
+# reversível — dá para trocar de volta depois, com a frase já concordada.
+#
+# Aqui ficam os termos cuja tradução **perde informação**, e que por isso não
+# têm volta. Medido na fase 5 com o modelo real:
+#
+#     headless      -> "sem cabeça"
+#     non-headless  -> "sem cabeça"
+#
+# As duas formas colapsam na mesma, e a negação desaparece. Nenhuma entrada de
+# glossário desfaz isso: ao ver "sem cabeça" ela não tem como saber qual das
+# duas gerou, e devolver sempre "headless" inverteria o sentido de metade das
+# ocorrências. Um erro confiante é pior que a frase em inglês.
+#
+# Custo declarado: o termo vira placeholder, e placeholder que o modelo
+# derrubar reprova o parágrafo inteiro — que então sai em inglês. É o preço de
+# não mentir sobre a negação.
+#
+# Entradas aqui são caras. Antes de acrescentar uma, mostre com o modelo que a
+# tradução perde informação, e não que ela apenas soa mal.
+
+non-headless
+headless

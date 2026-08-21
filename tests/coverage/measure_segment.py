@@ -4,11 +4,17 @@ O número que mais importa é o último: quantos segmentos PROSE passam do
 orçamento prático do modelo. Se forem muitos, a estratégia
 parágrafo -> sentença precisa ser revista antes da fase 3.
 
-    python tests/coverage/measure_segment.py
+    python tests/coverage/measure_segment.py            # corpus de man pages
+    python tests/coverage/measure_segment.py --help-corpus  # corpus de --help
+
+Os dois corpora são medidos **separadamente**, e de propósito: uma tabela de
+duas colunas é maioria num ``--help`` e rara numa man page, então a média dos
+dois esconderia regressão em qualquer um deles.
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from collections import Counter
 from pathlib import Path
@@ -20,6 +26,7 @@ from manbr.normalize import normalize  # noqa: E402
 from manbr.segment import Segment, SegmentKind, reassemble, segment  # noqa: E402
 
 CORPUS_DIR = Path(__file__).resolve().parents[1] / "corpus"
+HELP_CORPUS_DIR = CORPUS_DIR / "help"
 
 #: Orçamento prático por segmento de prosa, em tokens.
 TOKEN_BUDGET = 400
@@ -70,8 +77,17 @@ def is_blank(item: Segment) -> bool:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Mede a segmentação.")
+    parser.add_argument(
+        "--help-corpus",
+        action="store_true",
+        help="mede tests/corpus/help em vez das man pages",
+    )
+    args = parser.parse_args()
+    directory = HELP_CORPUS_DIR if args.help_corpus else CORPUS_DIR
+
     documents: dict[str, list[Segment]] = {}
-    for path in sorted(CORPUS_DIR.glob("*.txt")):
+    for path in sorted(directory.glob("*.txt")):
         normalized = normalize(path.read_text(encoding="utf-8"))
         segments = segment(normalized)
         assert reassemble(segments) == normalized, f"round-trip quebrou em {path}"
@@ -81,9 +97,10 @@ def main() -> int:
     content = [item for item in every if not is_blank(item)]
     prose = [item for item in content if item.kind is SegmentKind.PROSE]
     literal = [item for item in content if item.kind is SegmentKind.LITERAL]
+    columns = [item for item in content if item.kind is SegmentKind.COLUMNS]
 
     print("=" * 72)
-    print("SEGMENTAÇÃO DO CORPUS")
+    print(f"SEGMENTAÇÃO DO CORPUS DE {'--HELP' if args.help_corpus else 'MAN PAGES'}")
     print("=" * 72)
     print(f"arquivos                 : {len(documents)}")
     print(f"segmentos (com brancos)  : {len(every)}")
@@ -92,11 +109,15 @@ def main() -> int:
 
     lines_prose = sum(item.text.count("\n") + 1 for item in prose)
     lines_literal = sum(item.text.count("\n") + 1 for item in literal)
-    total_lines = lines_prose + lines_literal
+    lines_columns = sum(item.text.count("\n") + 1 for item in columns)
+    total_lines = lines_prose + lines_literal + lines_columns
     for name, items, lines in (
         ("PROSE", prose, lines_prose),
         ("LITERAL", literal, lines_literal),
+        ("COLUMNS", columns, lines_columns),
     ):
+        if not items:
+            continue
         share = len(items) / len(content)
         print(
             f"{name:<8} {len(items):5} segmentos ({share:5.1%})   "
@@ -108,7 +129,11 @@ def main() -> int:
     print("TAMANHO EM TOKENS (segmentos com conteúdo)")
     print("-" * 72)
     buckets = ((1, 10), (11, 25), (26, 50), (51, 100), (101, 200), (201, 400))
-    for kind_name, items in (("PROSE", prose), ("LITERAL", literal)):
+    for kind_name, items in (
+        ("PROSE", prose),
+        ("LITERAL", literal),
+        ("COLUMNS", columns),
+    ):
         sizes = sorted(tokens_of(item.text) for item in items)
         if not sizes:
             continue
@@ -144,6 +169,10 @@ def main() -> int:
         head = " ".join(item.text.split())[:58]
         print(f"    {tokens_of(item.text):4} tokens  {head}…")
 
+    # A seção seguinte é ancorada na amostra anotada, que é de man page.
+    if args.help_corpus:
+        return _masked_tally(content)
+
     print()
     print("-" * 72)
     print("OS OITO INTRATÁVEIS DA FASE 1.2")
@@ -168,11 +197,15 @@ def main() -> int:
         print(f"  {name}:{number:<5} {needle[:28]:<30} {verdict}")
     print(f"\n  resolvidos por classificação de bloco: {resolved}/{len(INTRACTABLE)}")
 
+    return _masked_tally(content)
+
+
+def _masked_tally(content: list[Segment]) -> int:
     print()
     print("-" * 72)
     print("TOKENS MASCARADOS POR TIPO DE SEGMENTO")
     print("-" * 72)
-    counts = {SegmentKind.PROSE: 0, SegmentKind.LITERAL: 0}
+    counts = {kind: 0 for kind in SegmentKind}
     for item in content:
         counts[item.kind] += len(mask(item.text).tokens)
     total = sum(counts.values())

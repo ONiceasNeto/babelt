@@ -3,7 +3,8 @@
 
     pyinstaller manbr.spec
 
-As tabelas editáveis (extensions.txt, headers.txt, glossary.txt) são lidas em
+As tabelas editáveis (extensions.txt, headers.txt, glossary.txt,
+literals.txt) são lidas em
 tempo de execução com `Path(__file__).parent`, então precisam viajar junto e
 no mesmo lugar relativo — daí `datas`.
 
@@ -20,6 +21,7 @@ datas = [
     ("manbr/extensions.txt", "manbr"),
     ("manbr/headers.txt", "manbr"),
     ("manbr/glossary.txt", "manbr"),
+    ("manbr/literals.txt", "manbr"),
 ]
 
 # ctranslate2 carrega bibliotecas nativas que o analisador estático não vê.

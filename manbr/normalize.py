@@ -51,6 +51,15 @@ _JUSTIFICATION_RE: Final = re.compile(
     rf"(?<=\S) {{2,{MAX_JUSTIFICATION_RUN}}}(?=\S)"
 )
 
+#: Intervalo **inequívoco** de coluna: acima do teto de justificação, e por
+#: isso nunca é justificação. Só ele sustenta a exceção de vizinhança — dois
+#: intervalos curtos alinhados por acaso, em prosa justificada, sustentavam um
+#: ao outro e inventavam tabela onde havia parágrafo (medido na iptables(8)).
+_COLUMN_GAP_RE: Final = re.compile(rf"(?<=\S) {{{MAX_JUSTIFICATION_RUN + 1},}}(?=\S)")
+
+#: Teto de passadas até o ponto fixo do colapso de justificação.
+_MAX_COLLAPSE_PASSES: Final = 5
+
 
 def strip_overstrike(line: str) -> str:
     """Resolve ``X\\bY`` mantendo ``Y``, como ``col -b``.
@@ -149,4 +158,52 @@ def normalize(text: str) -> str:
     ]
     lines = _dehyphenate(lines)
 
-    return "\n".join(_JUSTIFICATION_RE.sub(" ", line).rstrip() for line in lines)
+    # Até o ponto fixo: colapsar um intervalo desloca os seguintes da linha,
+    # e a vizinhança que sustentava um deles pode deixar de sustentar. Duas
+    # passadas resolvem o corpus inteiro; o laço existe para a garantia, não
+    # para o caso comum. Sem ele, `normalize` deixaria de ser idempotente.
+    for _ in range(_MAX_COLLAPSE_PASSES):
+        collapsed = _collapse_justification(lines)
+        if collapsed == lines:
+            break
+        lines = collapsed
+    return "\n".join(lines)
+
+
+def _gap_ends(line: str) -> set[int]:
+    """Colunas em que termina um intervalo largo o bastante para ser coluna."""
+    return {match.end() for match in _COLUMN_GAP_RE.finditer(line)}
+
+
+def _collapse_justification(lines: list[str]) -> list[str]:
+    """Colapsa justificação, poupando o que for alinhamento de coluna.
+
+    A regra de 2 a 3 espaços foi medida em man page, onde justificação é isso
+    e tabela usa de 19 a 27. Saída de ``--help`` não é justificada e alinha
+    coluna com dois espaços — a mesma sequência, com o sentido oposto. Sem
+    exceção, o gap de `-e, -exclude string[]  exclude host…` desaparecia e a
+    tabela do katana deixava de ser tabela (fase 5).
+
+    O que separa os dois casos é a **vizinhança**: um intervalo de coluna
+    termina na mesma coluna da linha de cima ou da de baixo, porque é o que
+    significa alinhar; a justificação distribui os espaços conforme a linha
+    coube, e coincidir é acaso.
+
+    A vizinhança só conta quando é inequívoca — um intervalo acima do teto de
+    justificação. Aceitar apoio de intervalo curto fazia dois acasos
+    sustentarem um ao outro: três linhas de prosa justificada da iptables(8)
+    viravam tabela, e metade de cada frase deixava de ser traduzida.
+    """
+    out: list[str] = []
+    for index, line in enumerate(lines):
+        neighbours: set[int] = set()
+        if index:
+            neighbours |= _gap_ends(lines[index - 1])
+        if index + 1 < len(lines):
+            neighbours |= _gap_ends(lines[index + 1])
+        collapsed = _JUSTIFICATION_RE.sub(
+            lambda match: match.group(0) if match.end() in neighbours else " ",
+            line,
+        )
+        out.append(collapsed.rstrip())
+    return out

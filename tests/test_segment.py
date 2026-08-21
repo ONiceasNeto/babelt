@@ -250,3 +250,146 @@ def test_syntax_ratio_limites() -> None:
 
 def test_reassemble_de_lista_vazia() -> None:
     assert reassemble([]) == ""
+
+
+# --------------------------------------------------------------------------
+# Fase 5: tabela de duas colunas
+# --------------------------------------------------------------------------
+
+
+HELP_TABLE = """Flags:
+INPUT:
+   -u, -list string[]     target url / list to crawl
+   -resume string         resume scan using resume.cfg
+   -d, -depth int         maximum depth to crawl
+"""
+
+
+def columns_of(text: str) -> list[Segment]:
+    return [item for item in segment(text) if item.kind is SegmentKind.COLUMNS]
+
+
+class TestDeteccaoDeColunas:
+    def test_tabela_de_help_vira_colunas(self) -> None:
+        rows = columns_of(HELP_TABLE)
+        assert len(rows) == 3
+        assert [row.left.strip() for row in rows] == [
+            "-u, -list string[]",
+            "-resume string",
+            "-d, -depth int",
+        ]
+        assert [row.text for row in rows] == [
+            "target url / list to crawl",
+            "resume scan using resume.cfg",
+            "maximum depth to crawl",
+        ]
+
+    def test_todas_as_celulas_na_mesma_coluna(self) -> None:
+        assert {row.column for row in columns_of(HELP_TABLE)} == {26}
+
+    def test_titulo_de_secao_nao_entra_na_tabela(self) -> None:
+        """`Flags:` e `INPUT:` estão no mesmo bloco e não são linha de tabela."""
+        texto = reassemble(segment(HELP_TABLE))
+        assert texto.startswith("Flags:\nINPUT:\n")
+
+    def test_duas_linhas_nao_bastam(self) -> None:
+        """Duas colunas alinhadas acontecem por acaso; três são deliberadas."""
+        texto = "  -a    first thing\n  -b    second thing\n"
+        assert columns_of(texto) == []
+
+    def test_um_espaco_nao_separa_coluna(self) -> None:
+        texto = "  -a first thing\n  -b second thing\n  -c third thing\n"
+        assert columns_of(texto) == []
+
+    def test_continuacao_entra_na_mesma_celula(self) -> None:
+        texto = (
+            "  -a    first thing that runs\n"
+            "        long into a second line\n"
+            "  -b    second thing\n"
+            "  -c    third thing\n"
+        )
+        rows = columns_of(texto)
+        assert len(rows) == 3
+        assert rows[0].text == "first thing that runs\nlong into a second line"
+
+    def test_bloco_denso_nao_vira_tabela(self) -> None:
+        """Tabela de saída de exemplo continua sendo exemplo."""
+        texto = (
+            "texto de introdução aqui\n"
+            "\n"
+            "       /dev/sda1   /boot   ext4\n"
+            "       /dev/sda2   /home   ext4\n"
+            "       /dev/sda3   /var    ext4\n"
+        )
+        assert columns_of(texto) == []
+
+    def test_celula_que_e_sintaxe_nao_vira_coluna(self) -> None:
+        texto = (
+            "  -a    --alpha=/etc/one.conf\n"
+            "  -b    --beta=/etc/two.conf\n"
+            "  -c    --gamma=/etc/three.conf\n"
+        )
+        assert columns_of(texto) == []
+
+
+class TestRemontagemDeColunas:
+    def test_round_trip(self) -> None:
+        assert reassemble(segment(HELP_TABLE)) == HELP_TABLE
+
+    def test_celula_traduzida_fica_na_coluna(self) -> None:
+        rows = columns_of(HELP_TABLE)
+        traduzida = Segment(
+            kind=SegmentKind.COLUMNS,
+            text="url alvo / lista para rastrear",
+            indent=0,
+            left=rows[0].left,
+            column=rows[0].column,
+        )
+        linha = reassemble([traduzida])
+        assert linha.startswith("   -u, -list string[]")
+        assert linha[26:] == "url alvo / lista para rastrear"
+
+    def test_celula_de_varias_linhas_alinha_na_coluna(self) -> None:
+        item = Segment(
+            kind=SegmentKind.COLUMNS,
+            text="primeira linha\nsegunda linha",
+            indent=0,
+            left="  -a",
+            column=8,
+        )
+        assert reassemble([item]) == "  -a    primeira linha\n        segunda linha"
+
+    def test_esquerda_longa_nao_e_invadida(self) -> None:
+        """Se a esquerda passou da coluna, a célula é empurrada, não sobreposta."""
+        item = Segment(
+            kind=SegmentKind.COLUMNS,
+            text="descrição",
+            indent=0,
+            left="  --uma-flag-muito-comprida",
+            column=8,
+        )
+        assert reassemble([item]) == "  --uma-flag-muito-comprida descrição"
+
+
+class TestManPageNaoRegride:
+    def test_descricao_pendurada_continua_prosa(self) -> None:
+        """O layout de man page é tag e descrição pendurada, não duas colunas."""
+        texto = (
+            "       -h, --help\n"
+            "              Show summary of options.\n"
+            "       -V, --version\n"
+            "              Output version information.\n"
+        )
+        assert columns_of(texto) == []
+
+    def test_paragrafo_depois_do_cabecalho_nao_e_bloco_fundo(self) -> None:
+        """A profundidade não conta o cabeçalho de seção que mora no bloco."""
+        texto = (
+            "DESCRIPTION\n"
+            "       ssh is a program for logging into a remote machine.\n"
+            "\n"
+            "       ssh connects to the destination, which may be specified as\n"
+            "       either [user@]hostname or a URI of the form ssh://host.\n"
+        )
+        kinds = {item.kind for item in segment(texto) if item.text.strip()}
+        assert SegmentKind.PROSE in kinds

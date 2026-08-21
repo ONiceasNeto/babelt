@@ -15,6 +15,14 @@
 # Datas, horas e dados de exemplo em blocos de saída também não são anotados;
 # endereços (IP, host) dentro desses blocos são.
 #
+# CORREÇÃO (fase 5): oito grupos entre colchetes de linha de sinopse estavam
+# fora da anotação — [chain], [per-target-options], [PATTERN...], [OPTIONS],
+# [FILE...], [MEMBER...]. Pela regra acima eles sempre foram anotáveis: traduzir
+# [OPTIONS] para [OPÇÕES] numa sinopse produz um comando inválido, e o colchete
+# fechado sem espaço dentro é exatamente a forma que os marca como não-prosa.
+# A fase 1 não tinha padrão que os pegasse, e a omissão passou; a fase 5 tem,
+# e sem esta correção eles apareceriam como falso positivo do padrão novo.
+#
 # CORREÇÃO (fase 1.2): três operandos chave=valor tinham escapado da anotação
 # original — var=value, name=content e %name=content — enquanto 17 outros da
 # mesma classe (conv=CONVS, time=TIME, pid=...) estavam anotados. Eram
@@ -225,3 +233,11 @@ tar.txt	118	--verbose
 tar.txt	118	/etc
 tar.txt	138	-i
 tar.txt	138	--ignore-zeros
+iptables.txt	24	[chain]
+iptables.txt	34	[per-target-options]
+systemctl.txt	78	[PATTERN...]
+tar.txt	15	[OPTIONS]
+tar.txt	15	[FILE...]
+tar.txt	26	[OPTIONS]
+tar.txt	36	[OPTIONS]
+tar.txt	36	[MEMBER...]

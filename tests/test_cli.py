@@ -22,9 +22,12 @@ from manbr.__main__ import (
     Progress,
     _decode,
     _encode,
+    HELP_FLAGS,
     build_parser,
     main,
     output_width,
+    read_help,
+    read_source,
     rewrap,
     translate_document,
 )
@@ -296,6 +299,151 @@ class TestRequebra:
             longa, FakeTranslator(), None, model="m", beam=1
         )
         assert max(len(linha) for linha in texto.split("\n")) <= 80
+
+
+# --------------------------------------------------------------------------
+# Fase 5: modo --help
+# --------------------------------------------------------------------------
+
+
+class FakeRun:
+    """Substitui subprocess.run: devolve saída por flag pedido."""
+
+    def __init__(self, saidas: dict[str, str]) -> None:
+        self.saidas = saidas
+        self.chamadas: list[list[str]] = []
+
+    def __call__(self, argv: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        self.chamadas.append(argv)
+        saida = self.saidas.get(argv[-1], "")
+        return subprocess.CompletedProcess(argv, 1 if not saida else 0, saida, "")
+
+
+class TestLeituraDeAjuda:
+    def test_usa_help_quando_responde(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        run = FakeRun({"--help": "Usage: foo [flags]\n"})
+        monkeypatch.setattr("manbr.__main__.shutil.which", lambda _: "/usr/bin/foo")
+        monkeypatch.setattr("manbr.__main__.subprocess.run", run)
+        assert read_help("foo") == "Usage: foo [flags]\n"
+        assert run.chamadas == [["foo", "--help"]]
+
+    def test_cai_para_h_e_depois_usage(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        run = FakeRun({"--usage": "uso: foo\n"})
+        monkeypatch.setattr("manbr.__main__.shutil.which", lambda _: "/usr/bin/foo")
+        monkeypatch.setattr("manbr.__main__.subprocess.run", run)
+        assert read_help("foo") == "uso: foo\n"
+        assert [c[-1] for c in run.chamadas] == list(HELP_FLAGS)
+
+    def test_nunca_passa_argumento_alem_do_flag(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Executar o binário é a superfície de risco; ela fica no mínimo."""
+        run = FakeRun({"--help": "ajuda\n"})
+        monkeypatch.setattr("manbr.__main__.shutil.which", lambda _: "/usr/bin/foo")
+        monkeypatch.setattr("manbr.__main__.subprocess.run", run)
+        read_help("foo")
+        assert all(len(argv) == 2 for argv in run.chamadas)
+
+    def test_comando_ausente(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("manbr.__main__.shutil.which", lambda _: None)
+        with pytest.raises(FileNotFoundError):
+            read_help("naoexiste")
+
+    def test_nenhum_flag_responde(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("manbr.__main__.shutil.which", lambda _: "/usr/bin/foo")
+        monkeypatch.setattr("manbr.__main__.subprocess.run", FakeRun({}))
+        with pytest.raises(LookupError):
+            read_help("foo")
+
+
+class TestEscolhaDaFonte:
+    def test_padrao_e_man(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("manbr.__main__.read_manpage", lambda cmd: f"man de {cmd}")
+        assert read_source("ss", help_of=False, auto=False) == "man de ss"
+
+    def test_help_of_nao_chama_man(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def nunca(cmd: str) -> str:
+            raise AssertionError("man não devia ser chamado")
+
+        monkeypatch.setattr("manbr.__main__.read_manpage", nunca)
+        monkeypatch.setattr("manbr.__main__.read_help", lambda cmd: f"ajuda de {cmd}")
+        assert read_source("katana", help_of=True, auto=False) == "ajuda de katana"
+
+    def test_auto_prefere_man(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("manbr.__main__.read_manpage", lambda cmd: "a man page")
+        monkeypatch.setattr("manbr.__main__.read_help", lambda cmd: "a ajuda")
+        assert read_source("ss", help_of=False, auto=True) == "a man page"
+
+    def test_auto_cai_para_help_sem_pagina(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        def sem_pagina(cmd: str) -> str:
+            raise LookupError("No manual entry for katana")
+
+        monkeypatch.setattr("manbr.__main__.read_manpage", sem_pagina)
+        monkeypatch.setattr("manbr.__main__.read_help", lambda cmd: "a ajuda")
+        assert read_source("katana", help_of=False, auto=True) == "a ajuda"
+        assert "tentando --help" in capsys.readouterr().err
+
+    def test_auto_nao_esconde_outro_erro_do_man(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Seção inválida é erro, e trocar de fonte esconderia isso."""
+
+        def outro_erro(cmd: str) -> str:
+            raise LookupError("man: invalid section")
+
+        monkeypatch.setattr("manbr.__main__.read_manpage", outro_erro)
+        monkeypatch.setattr("manbr.__main__.read_help", lambda cmd: "a ajuda")
+        with pytest.raises(LookupError, match="invalid section"):
+            read_source("foo", help_of=False, auto=True)
+
+
+class TestArgumentosDoModoHelp:
+    def test_help_of_sem_comando_e_uso_invalido(self) -> None:
+        with pytest.raises(SystemExit) as erro:
+            main(["--help-of"])
+        assert erro.value.code == EXIT_USAGE
+
+    def test_help_of_e_auto_sao_exclusivos(self) -> None:
+        with pytest.raises(SystemExit) as erro:
+            main(["--help-of", "--auto", "foo"])
+        assert erro.value.code == EXIT_USAGE
+
+    def test_ferramenta_ausente_da_127(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        monkeypatch.setattr("manbr.__main__.shutil.which", lambda _: None)
+        monkeypatch.setattr(sys.stdout, "isatty", lambda: False)
+        assert main(["--help-of", "naoexiste"]) == EXIT_NOT_FOUND
+        assert "não está instalado" in capsys.readouterr().err
+
+
+class TestRequebraDeColuna:
+    def test_celula_quebra_dentro_da_coluna(self) -> None:
+        item = Segment(
+            kind=SegmentKind.COLUMNS,
+            text=" ".join(["palavra"] * 30),
+            indent=0,
+            left="   -u, -list string[]",
+            column=26,
+        )
+        [saida] = rewrap([item], 80)
+        linhas = saida.text.split("\n")
+        assert all(len(linha) + 26 <= 80 for linha in linhas)
+        assert len(linhas) > 1
+
+    def test_esquerda_e_coluna_sobrevivem_a_requebra(self) -> None:
+        item = Segment(
+            kind=SegmentKind.COLUMNS,
+            text="curta",
+            indent=0,
+            left="  -a",
+            column=8,
+        )
+        [saida] = rewrap([item], 80)
+        assert saida.left == "  -a"
+        assert saida.column == 8
 
 
 class TestSerializacao:

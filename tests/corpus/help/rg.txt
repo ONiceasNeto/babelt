@@ -1,0 +1,160 @@
+ripgrep 14.1.0
+Andrew Gallant <jamslam@gmail.com>
+
+ripgrep (rg) recursively searches the current directory for lines matching
+a regex pattern. By default, ripgrep will respect gitignore rules and
+automatically skip hidden files/directories and binary files.
+
+Use -h for short descriptions and --help for more details.
+
+Project home page: https://github.com/BurntSushi/ripgrep
+
+USAGE:
+    rg [OPTIONS] PATTERN [PATH ...]
+    rg [OPTIONS] -e PATTERN ... [PATH ...]
+    rg [OPTIONS] -f PATTERNFILE ... [PATH ...]
+    rg [OPTIONS] --files [PATH ...]
+    rg [OPTIONS] --type-list
+    command | rg [OPTIONS] PATTERN
+    rg [OPTIONS] --help
+    rg [OPTIONS] --version
+
+POSITIONAL ARGUMENTS:
+    <PATTERN>
+        A regular expression used for searching. To match a pattern beginning
+        with a dash, use the -e/--regexp flag.
+
+        For example, to search for the literal '-foo', you can use this flag:
+
+            rg -e -foo
+
+        You can also use the special '--' delimiter to indicate that no more
+        flags will be provided. Namely, the following is equivalent to the
+        above:
+
+            rg -- -foo
+
+    <PATH>...
+        A file or directory to search. Directories are searched recursively.
+        File paths specified on the command line override glob and ignore
+        rules.
+
+INPUT OPTIONS:
+    -e PATTERN, --regexp=PATTERN
+        A pattern to search for. This option can be provided multiple times,
+        where all patterns given are searched, in addition to any patterns
+        provided by -f/--file. Lines matching at least one of the provided
+        patterns are printed. This flag can also be used when searching for
+        patterns that start with a dash.
+
+        For example, to search for the literal -foo:
+
+            rg -e -foo
+
+        You can also use the special -- delimiter to indicate that no more
+        flags will be provided. Namely, the following is equivalent to the
+        above:
+
+            rg -- -foo
+
+        When -f/--file or -e/--regexp is used, then ripgrep treats all
+        positional arguments as files or directories to search.
+
+    -f PATTERNFILE, --file=PATTERNFILE
+        Search for patterns from the given file, with one pattern per line.
+        When this flag is used multiple times or in combination with the
+        -e/--regexp flag, then all patterns provided are searched. Empty
+        pattern lines will match all input lines, and the newline is not
+        counted as part of the pattern.
+
+        A line is printed if and only if it matches at least one of the
+        patterns.
+
+        When PATTERNFILE is -, then stdin will be read for the patterns.
+
+        When -f/--file or -e/--regexp is used, then ripgrep treats all
+        positional arguments as files or directories to search.
+
+    --pre=COMMAND
+        For each input PATH, this flag causes ripgrep to search the standard
+        output of COMMAND PATH instead of the contents of PATH. This option
+        expects the COMMAND program to either be a path or to be available in
+        your PATH. Either an empty string COMMAND or the --no-pre flag will
+        disable this behavior.
+
+        WARNING: When this flag is set, ripgrep will unconditionally spawn a
+        process for every file that is searched. Therefore, this can incur an
+        unnecessarily large performance penalty if you don't otherwise need the
+        flexibility offered by this flag. One possible mitigation to this is to
+        use the --pre-glob flag to limit which files a preprocessor is run
+        with.
+
+        A preprocessor is not run when ripgrep is searching stdin.
+
+        When searching over sets of files that may require one of several
+        preprocessors, COMMAND should be a wrapper program which first
+        classifies PATH based on magic numbers/content or based on the PATH
+        name and then dispatches to an appropriate preprocessor. Each COMMAND
+        also has its standard input connected to PATH for convenience.
+
+        For example, a shell script for COMMAND might look like:
+
+            case "$1" in
+            *.pdf)
+                exec pdftotext "$1" -
+                ;;
+            *)
+                case $(file "$1") in
+                *Zstandard*)
+                    exec pzstd -cdq
+                    ;;
+                *)
+                    exec cat
+                    ;;
+                esac
+                ;;
+            esac
+
+        The above script uses pdftotext to convert a PDF file to plain text.
+        For all other files, the script uses the file utility to sniff the type
+        of the file based on its contents. If it is a compressed file in the
+        Zstandard format, then pzstd is used to decompress the contents to
+        stdout.
+
+        This overrides the -z/--search-zip flag.
+
+    --pre-glob=GLOB
+        This flag works in conjunction with the --pre flag. Namely, when one or
+        more --pre-glob flags are given, then only files that match the given
+        set of globs will be handed to the command specified by the --pre flag.
+        Any non-matching files will be searched without using the preprocessor
+        command.
+
+        This flag is useful when searching many files with the --pre flag.
+        Namely, it provides the ability to avoid process overhead for files
+        that don't need preprocessing. For example, given the following shell
+        script, pre-pdftotext:
+
+            #!/bin/sh
+            pdftotext "$1" -
+
+        then it is possible to use --pre pre-pdftotext --pre-glob '*.pdf' to
+        make it so ripgrep only executes the pre-pdftotext command on files
+        with a .pdf extension.
+
+        Multiple --pre-glob flags may be used. Globbing rules match gitignore
+        globs. Precede a glob with a ! to exclude it.
+
+        This flag has no effect if the --pre flag is not used.
+
+    -z, --search-zip
+        This flag instructs ripgrep to search in compressed files. Currently
+        gzip, bzip2, xz, LZ4, LZMA, Brotli and Zstd files are supported. This
+        option expects the decompression binaries (such as gzip) to be
+        available in your PATH. If the required binaries are not found, then
+        ripgrep will not emit an error messages by default. Use the --debug
+        flag to see more information.
+
+        Note that this flag does not make ripgrep search archive formats as
+        directory trees. It only makes ripgrep detect compressed files and then
+        decompress them before searching their contents as it would any other

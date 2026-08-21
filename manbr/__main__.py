@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import textwrap
+from dataclasses import replace
 from pathlib import Path
 from typing import Final, TextIO
 
@@ -31,7 +32,7 @@ from manbr.translate import BEAM_SIZE, TranslationOutcome, Translator
 
 __all__ = ["main"]
 
-VERSION: Final = "0.1.0"
+VERSION: Final = "0.2.0"
 
 EXIT_OK: Final = 0
 EXIT_ERROR: Final = 1
@@ -40,6 +41,10 @@ EXIT_NOT_FOUND: Final = 127
 EXIT_INTERRUPTED: Final = 130
 
 _DEFAULT_PAGER: Final = "less -R"
+
+#: Segundos para um `<comando> --help` responder. Ajuda que não sai nesse
+#: tempo não é ajuda: é um programa que entrou em execução de verdade.
+HELP_TIMEOUT: Final = 10
 
 #: Largura de saída. O `man` é lido com MANWIDTH=80, e a prosa volta do modelo
 #: numa linha só — sem requebrar, 15% das linhas passariam de 80 colunas e o
@@ -64,7 +69,18 @@ def build_parser() -> argparse.ArgumentParser:
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("command", nargs="?", help="página de manual a traduzir")
+    parser.add_argument("command", nargs="?", help="comando cuja ajuda traduzir")
+    origem = parser.add_mutually_exclusive_group()
+    origem.add_argument(
+        "--help-of",
+        action="store_true",
+        help="executa `<comando> --help` em vez de `man <comando>`",
+    )
+    origem.add_argument(
+        "--auto",
+        action="store_true",
+        help="tenta `man`; se não houver página, cai para `--help`",
+    )
     parser.add_argument(
         "--beam", type=int, default=BEAM_SIZE, metavar="N", help="feixe da busca"
     )
@@ -109,11 +125,11 @@ def output_width() -> int:
 
 
 def rewrap(segments: list[Segment], width: int) -> list[Segment]:
-    """Requebra a prosa na largura da página.
+    """Requebra a prosa e as células de tabela na largura da página.
 
     O modelo devolve o parágrafo inteiro numa linha: para ele, as quebras de
-    largura do `man` não são conteúdo. Só a prosa é requebrada — bloco literal
-    é tabela, exemplo ou sinopse, onde a quebra é significado.
+    largura do `man` não são conteúdo. Bloco literal fica intocado — é tabela
+    de saída, exemplo ou sinopse, onde a quebra é significado.
 
     ``break_long_words`` e ``break_on_hyphens`` desligados de propósito: um
     caminho, uma flag ou uma URL longa fica inteira, mesmo estourando a
@@ -122,18 +138,60 @@ def rewrap(segments: list[Segment], width: int) -> list[Segment]:
     """
     out: list[Segment] = []
     for item in segments:
-        available = max(width - item.indent, _MIN_WIDTH)
-        if item.kind is not SegmentKind.PROSE or not item.text.strip():
+        if item.kind is SegmentKind.LITERAL or not item.text.strip():
             out.append(item)
             continue
+        # Numa linha de tabela, a largura disponível é o que sobra à direita
+        # da coluna: a célula que estourar quebra dentro da própria coluna,
+        # com a continuação alinhada — nunca invadindo a esquerda.
+        offset = item.column if item.kind is SegmentKind.COLUMNS else item.indent
         wrapped = textwrap.fill(
             " ".join(item.text.split()),
-            width=available,
+            width=max(width - offset, _MIN_WIDTH),
             break_long_words=False,
             break_on_hyphens=False,
         )
-        out.append(Segment(kind=item.kind, text=wrapped, indent=item.indent))
+        out.append(replace(item, text=wrapped))
     return out
+
+
+#: Flags de ajuda, na ordem em que são tentadas. `--help` é o padrão de fato;
+#: `-h` cobre quem só implementa a forma curta; `--usage` cobre as ferramentas
+#: da AIX/IBM e alguns utilitários antigos.
+HELP_FLAGS: Final = ("--help", "-h", "--usage")
+
+
+def read_help(command: str) -> str:
+    """Saída de ajuda de ``command``.
+
+    **Isto executa o binário.** É diferente em espécie de ler uma man page,
+    que é um arquivo: rodar `foo --help` roda `foo`. Por isso o comando é
+    invocado só com o flag de ajuda, nunca com argumento nenhum a mais, e o
+    modo nunca é o padrão — o usuário pede por ele.
+
+    Metade das ferramentas escreve a ajuda em stderr e sai com código 1
+    depois de imprimi-la, então nem o fluxo nem o código de saída servem de
+    critério: o que decide é ter vindo texto.
+    """
+    if shutil.which(command) is None:
+        raise FileNotFoundError(f"{command} não está instalado")
+
+    for flag in HELP_FLAGS:
+        try:
+            result = subprocess.run(
+                [command, flag],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                errors="replace",
+                timeout=HELP_TIMEOUT,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if result.stdout.strip():
+            return result.stdout
+    raise LookupError(f"{command} não respondeu a nenhum de {', '.join(HELP_FLAGS)}")
 
 
 class Progress:
@@ -217,9 +275,9 @@ def translate_document(
     final: list[Segment] = []
     for item, settled in zip(segments, outcomes, strict=True):
         assert settled is not None
-        if item.kind is SegmentKind.PROSE and item.text.strip():
+        if item.kind is not SegmentKind.LITERAL and item.text.strip():
             counters["translated" if settled.translated else "english"] += 1
-        final.append(Segment(kind=item.kind, text=settled.text, indent=item.indent))
+        final.append(replace(item, text=settled.text))
 
     return reassemble(rewrap(apply_headers(final), output_width())), counters
 
@@ -305,21 +363,38 @@ def report(counters: dict[str, int], cache_stats: CacheStats | None) -> None:
         )
 
 
+def read_source(command: str, *, help_of: bool, auto: bool) -> str:
+    """Texto a traduzir: man page, saída de ajuda, ou man com queda para ajuda."""
+    if help_of:
+        return read_help(command)
+    if not auto:
+        return read_manpage(command)
+    try:
+        return read_manpage(command)
+    except LookupError as error:
+        # Só a ausência de página justifica executar o binário. `man` que
+        # falhou por outro motivo — seção inválida, catman quebrado — é erro,
+        # e trocar de fonte esconderia isso.
+        if "No manual entry" not in str(error):
+            raise
+        warn(f"sem página de manual para {command}; tentando --help")
+        return read_help(command)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
     if args.beam < 1:
         parser.error("--beam precisa ser >= 1")
+    if (args.help_of or args.auto) and not args.command:
+        parser.error("--help-of e --auto precisam de um comando")
 
     # ---- entrada ---------------------------------------------------------
     if args.command:
         try:
-            source = read_manpage(args.command)
-        except FileNotFoundError as error:
-            warn(str(error))
-            return EXIT_NOT_FOUND
-        except LookupError as error:
+            source = read_source(args.command, help_of=args.help_of, auto=args.auto)
+        except (FileNotFoundError, LookupError) as error:
             warn(str(error))
             return EXIT_NOT_FOUND
     elif not sys.stdin.isatty():

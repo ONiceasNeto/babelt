@@ -65,16 +65,26 @@ $ python -c 'from manbr.model import download; download()'
 $ manbr ss                    # executa `man ss` e traduz
 $ man ss | manbr              # traduz a entrada padrão
 $ nmap --help | manbr         # funciona com qualquer saída de terminal
+$ manbr --help-of katana      # executa `katana --help` e traduz
+$ manbr --auto katana         # tenta man; sem página, cai para --help
 $ manbr ss > ss.pt.txt        # texto em stdout, limpo
 ```
 
 | opção | efeito |
 |---|---|
+| `--help-of` | executa `<comando> --help` em vez de `man <comando>` |
+| `--auto` | tenta `man`; se não houver página, cai para `--help` |
 | `--beam N` | feixe da busca (padrão 1; 4 traduz melhor e demora ~2,5× mais) |
 | `--no-cache` | ignora o cache, na leitura e na escrita |
 | `--stats` | estatísticas em stderr ao final |
 | `--model-path P` | usa outro diretório de modelo |
 | `--version` | versão |
+
+> **`--help-of` e `--auto` executam o binário.** Ler uma man page é ler um
+> arquivo; rodar `foo --help` roda `foo`. Por isso nenhum dos dois é o padrão,
+> o comando é invocado só com o flag de ajuda (`--help`, depois `-h`, depois
+> `--usage`), nunca com argumento a mais, e com timeout de 10 segundos.
+> `--auto` só troca de fonte quando o `man` responde "No manual entry".
 
 Texto traduzido vai **sempre** para stdout; progresso, avisos e estatísticas
 vão **sempre** para stderr. Em terminal, a saída é paginada com `$PAGER`
@@ -124,12 +134,19 @@ frases que falharem ficam em inglês.
 
 Outras limitações, medidas e não escondidas:
 
+- **Lista de valores separada por vírgula ainda chega ao modelo.**
+  `all,robotstxt,sitemapxml` pode sair com o primeiro item traduzido. São 13
+  ocorrências nos corpora medidos; ver `docs/development/README-fase5.md`.
 - **A qualidade do português é a de um modelo genérico de 2022.** Sai
   "O daemon bifurca" e "deixa cair o pacote". Não há afinação para texto
   técnico.
 - **Cabeçalhos de seção vêm de uma tabela** (`manbr/headers.txt`), não do
   modelo, para que `SEE ALSO` seja sempre `VEJA TAMBÉM`. Cabeçalho fora da
   tabela fica em inglês.
+- **Alguns termos nunca vão ao modelo** (`manbr/literals.txt`): ele traduz
+  `headless` e `non-headless` para a mesma coisa e a negação some. Mascarar
+  custa tradução — placeholder perdido reprova o parágrafo —, e o parágrafo
+  sai em inglês em vez de dizer o contrário do original.
 - **O glossário é cego a contexto.** `manbr/glossary.txt` devolve termos
   técnicos ao inglês (`soquete` → `socket`), mas não sabe qual palavra
   inglesa gerou a portuguesa. Entradas ambíguas foram removidas por medição.
@@ -144,7 +161,9 @@ Outras limitações, medidas e não escondidas:
 man ss
   → normalize   remove overstrike do roff, junta hifenização, colapsa
                 justificação
-  → segment     separa prosa de bloco literal (sinopse, exemplos, tabelas)
+  → segment     separa prosa, bloco literal (sinopse, exemplos, tabelas) e
+                tabela de duas colunas — nesta, só a célula da direita é
+                traduzida, e a coluna da esquerda passa intacta
   → mask        troca flags, caminhos, IPs, variáveis, URLs e literais
                 citados por marcadores
   → translate   CTranslate2 int8, com cache por segmento
@@ -161,7 +180,7 @@ Blocos literais nunca chegam ao modelo.
 
 ```console
 $ python -m venv .venv && .venv/bin/pip install -e '.[dev,convert]'
-$ .venv/bin/pytest                              # 1274 testes
+$ .venv/bin/pytest                              # 1348 testes
 $ .venv/bin/mypy                                # strict
 $ .venv/bin/mypy --python-version 3.11 manbr    # piso de execução
 ```

@@ -238,6 +238,16 @@ class TestFluxo:
 
 
 class TestGuardaDeVocabulario:
+    """O exemplo mudou na fase 5, e a mudança é o resultado da fase.
+
+    Estes testes usavam `{a|b}` como texto fora do vocabulário. A fase 3.1
+    tinha medido que 64 dos 71 segmentos com pedaço desconhecido eram buraco
+    de **cobertura** do mascaramento, não de vocabulário — e a fase 5 fechou
+    essa cobertura: `{a|b}` agora vira placeholder e nunca chega ao tokenizer.
+    O exemplo passou a ser o bullet, que é buraco de vocabulário de verdade e
+    continua sem solução por mascaramento.
+    """
+
     def test_segmento_com_oov_nao_vai_ao_modelo(self) -> None:
         """Se o tokenizer não conhece o pedaço, o modelo devolveria ⁇."""
         called: list[str] = []
@@ -246,22 +256,22 @@ class TestGuardaDeVocabulario:
             called.append(text)
             return text
 
-        translator = FakeTranslator(behaviour, oov=["{"])
-        (outcome,) = translator.translate_all([prose("Use {a|b} to pick.")])
+        translator = FakeTranslator(behaviour, oov=["•"])
+        (outcome,) = translator.translate_all([prose("Use • to pick.")])
         assert not outcome.translated
         assert outcome.reason == "oov"
-        assert outcome.text == "Use {a|b} to pick."
+        assert outcome.text == "Use • to pick."
         assert called == []  # nenhuma inferência gasta
 
     def test_segmento_sem_oov_passa(self) -> None:
-        translator = FakeTranslator(lambda text: text.upper(), oov=["{"])
+        translator = FakeTranslator(lambda text: text.upper(), oov=["•"])
         (outcome,) = translator.translate_all([prose("Plain sentence here.")])
         assert outcome.translated
 
     def test_oov_nao_impede_os_outros(self) -> None:
-        translator = FakeTranslator(lambda text: text.upper(), oov=["{"])
+        translator = FakeTranslator(lambda text: text.upper(), oov=["•"])
         outcomes = translator.translate_all(
-            [prose("Use {a} now."), prose("Plain sentence here.")]
+            [prose("Use • now."), prose("Plain sentence here.")]
         )
         assert [o.reason for o in outcomes] == ["oov", None]
         assert [o.translated for o in outcomes] == [False, True]
@@ -269,8 +279,10 @@ class TestGuardaDeVocabulario:
 
 class TestDiagnosticoDeOOV:
     def test_metacaractere_e_buraco_de_cobertura(self) -> None:
+        # Com espaço dentro, o grupo escapa do padrão da fase 5 e continua
+        # chegando ao tokenizer — é o que sobrou de buraco de cobertura.
         translator = FakeTranslator(lambda t: t, oov=["{", "|"])
-        pieces, coverage = translator.oov_diagnosis("a {x|y} b")
+        pieces, coverage = translator.oov_diagnosis("a {x | y} b")
         assert pieces and coverage
 
     def test_tipografia_e_buraco_de_vocabulario(self) -> None:

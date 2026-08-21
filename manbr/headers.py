@@ -13,6 +13,7 @@ visível e corrigível acrescentando uma linha.
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import replace
 from pathlib import Path
 from typing import Final
 
@@ -63,7 +64,8 @@ def apply_headers(segments: Iterable[Segment]) -> list[Segment]:
     out: list[Segment] = []
     for item in segments:
         translated = translate_header(item.text)
-        out.append(item if translated == item.text else Segment(
-            kind=item.kind, text=translated, indent=item.indent
-        ))
+        # `replace` e não `Segment(...)`: um segmento de coluna carrega a
+        # esquerda e a posição da coluna, e reconstruir campo a campo as
+        # perderia silenciosamente.
+        out.append(item if translated == item.text else replace(item, text=translated))
     return out

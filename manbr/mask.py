@@ -20,6 +20,7 @@ from typing import Final
 __all__ = [
     "CLOSE",
     "EXTENSIONS",
+    "LITERALS",
     "MAX_QUOTED_WORDS",
     "OPEN",
     "MaskResult",
@@ -52,7 +53,17 @@ _BRACE: Final = r"\{[^}\s]*\}"
 # (-c[color][={always|auto|never}).
 _BRACKET: Final = r"\[[^\s\]]*\]|\[?=?\{[^}\s]*\}"
 
+# Corpo de um grupo isolado: {action}, [flags], {always|auto|never}. Sem
+# espaço dentro, e sem os próprios delimitadores, para que o casamento pare no
+# primeiro fechamento. É o espaço que separa gramática de comando de prosa
+# entre parênteses: "[see below]" não casa, "[flags]" casa.
+_GROUP_BODY: Final = r"[^\s\[\]{}|]+(?:\|[^\s\[\]{}|]+)*"
+
+# Um lado da alternância solta: yes|no, A|c|d|r|t, --foo|--bar.
+_ALT_TOKEN: Final = r"[\w.@/*+-]+"
+
 _EXTENSIONS_PATH: Final = Path(__file__).parent / "extensions.txt"
+_LITERALS_PATH: Final = Path(__file__).parent / "literals.txt"
 
 
 def _load_extensions(path: Path = _EXTENSIONS_PATH) -> tuple[str, ...]:
@@ -72,6 +83,27 @@ def _load_extensions(path: Path = _EXTENSIONS_PATH) -> tuple[str, ...]:
 #: Extensões conhecidas. Ordenadas da mais longa para a mais curta para que a
 #: alternância prefira o sufixo mais específico.
 EXTENSIONS: Final = _load_extensions()
+
+
+def _load_literals(path: Path = _LITERALS_PATH) -> tuple[str, ...]:
+    """Lê os termos intraduzíveis, do mais longo para o mais curto.
+
+    A ordem importa: `non-headless` precisa ser tentado antes de `headless`,
+    senão a alternância casaria só o sufixo e deixaria o `non-` exposto — que
+    é exatamente a negação que a lista existe para salvar.
+    """
+    found = [
+        entry
+        for raw in path.read_text(encoding="utf-8").splitlines()
+        if (entry := raw.split("#", 1)[0].strip())
+    ]
+    if any(len(entry) < 3 for entry in found):
+        raise ValueError(f"{path}: termo curto demais para não gerar falso positivo")
+    return tuple(sorted(set(found), key=lambda e: (-len(e), e)))
+
+
+#: Termos que nunca vão ao modelo. Ver literals.txt para o critério.
+LITERALS: Final = _load_literals()
 
 _EXT_ALT: Final = "|".join(EXTENSIONS)
 
@@ -226,6 +258,50 @@ _PATTERNS: Final[tuple[tuple[str, str], ...]] = (
     #     intermediários permitem que scanme.nmap.org e backup.tar.gz virem
     #     um placeholder só: mascarar pela metade exporia o resto.
     ("dotted", rf"\b[\w-]+(?:\.[\w-]+)*\.(?:{_EXT_ALT})\b"),
+    # 15. Termos intraduzíveis, de literals.txt. Sem caixa: um termo técnico
+    #     no começo da frase vem em maiúscula e é o mesmo termo. Precedência
+    #     alta o bastante para vir antes de `dotted` e `keyvalue`, e baixa o
+    #     bastante para não roubar um termo que faça parte de uma flag.
+    (
+        "literal",
+        "(?i:" + "|".join(re.escape(term) for term in LITERALS) + r")(?!\w)"
+        if LITERALS
+        else r"(?!)",
+    ),
+    # 16. Grupo isolado entre chaves ou colchetes: {action}, [flags],
+    #     {always|auto|never}, [OPTION]. A fase 3.1 mediu que 64 dos 71
+    #     segmentos com pedaço fora do vocabulário eram exatamente isto —
+    #     gramática de comando que o mascaramento não reconhecia solta, só
+    #     colada num caminho ou numa flag.
+    #
+    #     Vem depois das flags e dos caminhos de propósito: -c[color] e
+    #     /dev/disk/by-{label,uuid} já são consumidos inteiros lá em cima, e
+    #     estes padrões só pegam o que sobrou solto.
+    #
+    #     A exigência de fechar sem espaço dentro é o que mantém FP em zero:
+    #     prosa de man page usa colchete com espaço ("[see FILES below]"), e
+    #     sintaxe de comando não usa.
+    #     O sufixo colado existe por um caso do corpus: `[DD-]hh:mm:ss`, o
+    #     formato de ETIME da ps(1), que é um token só. Sem ele o grupo
+    #     mascarava a metade esquerda e deixava a direita exposta — a classe
+    #     PARTIAL, que a medição de cobertura trata como pior que AUSENTE.
+    #     O sufixo precisa terminar em letra, dígito ou dois-pontos, e é isso
+    #     que impede engolir o ponto final de "use [flags]."
+    #
+    #     `[1]` e `[2]` ficam de fora: em página de systemd são referência de
+    #     nota de rodapé no meio de uma frase, não sintaxe. Mascará-los não
+    #     corromperia nada — o literal volta byte a byte —, mas põe um
+    #     placeholder a mais numa frase de prosa, e placeholder perdido é
+    #     parágrafo rejeitado. Grupo só de dígitos não é gramática de comando.
+    ("group", rf"(?:\{{{_GROUP_BODY}\}}|\[(?!\d+\]){_GROUP_BODY}\])(?:[\w:.-]*[\w:])?"),
+    # 17. Sufixo de tipo de CLI Go/Rust: string[], int[], value[]. Colchete
+    #     vazio não existe em prosa, então o padrão não tem como gerar FP.
+    #     O `value` nu, que o mesmo layout usa, ficou de fora por medição:
+    #     ver README-fase5.md.
+    ("typesuffix", r"\b[A-Za-z]\w*\[\]"),
+    # 18. Alternância solta, fora de chaves: yes|no, A|c|d|r|t, tcp|udp. Os
+    #     dois lados sem espaço em volta do |; com espaço é tabela ou prosa.
+    ("alternation", rf"(?<![|\w]){_ALT_TOKEN}(?:\|{_ALT_TOKEN})+(?![|\w])"),
 )
 
 _MASK_RE: Final = re.compile(

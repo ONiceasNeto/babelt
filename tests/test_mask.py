@@ -697,7 +697,14 @@ class TestGrupoColadoNaFlagOuCaminho:
         assert masked_tokens("-PO[protocol list]") == ["-PO"]
 
     def test_colchete_de_sinopse_nao_e_absorvido(self) -> None:
-        assert masked_tokens("mount [-fnrsvw] [-t fstype]") == ["-fnrsvw", "-t"]
+        """O grupo não entra na flag; vira token próprio (fase 5).
+
+        Até a fase 4 o colchete ficava exposto e só `-fnrsvw` era mascarado. O
+        que este teste protege continua sendo o mesmo: a flag não engole o
+        colchete de uma sinopse. Só que agora o colchete tem padrão próprio, e
+        `[-t fstype]` segue de fora por ter espaço dentro.
+        """
+        assert masked_tokens("mount [-fnrsvw] [-t fstype]") == ["[-fnrsvw]", "-t"]
 
 
 class TestValorAngularNaFlagLonga:
@@ -750,3 +757,100 @@ class TestAjustesFinaisDaFase12:
 
     def test_ponto_final_seguido_de_caminho(self) -> None:
         assert masked_tokens("fim. /usr") == ["/usr"]
+
+
+# --------------------------------------------------------------------------
+# Fase 5: grupo isolado, sufixo de tipo, alternância e termos intraduzíveis
+# --------------------------------------------------------------------------
+
+
+class TestGrupoIsolado:
+    """A fase 3.2 pendente: `{action}` e `[flags]` soltos, não colados."""
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "{action}",
+            "{A|c|d|r|t}",
+            "{always|auto|never}",
+            "[flags]",
+            "[OPTION]",
+            "[options]",
+            "[PATTERN...]",
+            "[USER@]HOST",
+        ],
+    )
+    def test_grupo_fechado_sem_espaco_e_mascarado(self, text: str) -> None:
+        assert masked_tokens(f"use {text} aqui") == [text]
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "see [the FILES section] below",
+            "escreva { assim } para agrupar",
+            "um [colchete sem fechar aqui",
+        ],
+    )
+    def test_grupo_com_espaco_dentro_e_prosa(self, text: str) -> None:
+        """O espaço é o que separa gramática de comando de prosa entre colchetes."""
+        assert mask(text).tokens == {}
+
+    def test_referencia_de_nota_de_rodape_nao_e_mascarada(self) -> None:
+        """`[1]` em página de systemd é nota de rodapé, não sintaxe."""
+        assert mask("Partitions Specification[1]. For further").tokens == {}
+
+    def test_sufixo_colado_entra_no_mesmo_token(self) -> None:
+        """`[DD-]hh:mm:ss` é um token só; meio mascarado seria pior."""
+        assert masked_tokens("o formato [DD-]hh:mm:ss é") == ["[DD-]hh:mm:ss"]
+
+    def test_ponto_final_fica_de_fora(self) -> None:
+        assert masked_tokens("rode katana [flags]. depois") == ["[flags]"]
+
+    def test_grupo_colado_na_flag_continua_com_a_flag(self) -> None:
+        """A precedência não mudou: -c[color] segue um token só."""
+        assert masked_tokens("-c[color]") == ["-c[color]"]
+
+
+class TestSufixoDeTipo:
+    @pytest.mark.parametrize("text", ["string[]", "int[]", "value[]"])
+    def test_colchete_vazio_e_tipo(self, text: str) -> None:
+        assert masked_tokens(f"-list {text} alvo") == ["-list", text]
+
+    def test_palavra_solta_nao_e_tipo(self) -> None:
+        """`value` nu ficou de fora por medição; ver README-fase5."""
+        assert mask("the value of the option").tokens == {}
+
+
+class TestAlternanciaSolta:
+    @pytest.mark.parametrize(
+        "text", ["yes|no", "tcp|udp", "open|filtered", "device|mountpoint"]
+    )
+    def test_barras_sem_espaco_sao_sintaxe(self, text: str) -> None:
+        assert masked_tokens(f"aceita {text} aqui") == [text]
+
+    def test_barra_com_espaco_e_prosa_ou_tabela(self) -> None:
+        assert mask("coluna a | coluna b").tokens == {}
+
+
+class TestTermosIntraduziveis:
+    """Ver literals.txt: o modelo colapsa headless e non-headless em um só."""
+
+    def test_termo_e_mascarado(self) -> None:
+        assert masked_tokens("enable headless crawling") == ["headless"]
+
+    def test_negacao_e_preferida_ao_termo_curto(self) -> None:
+        assert masked_tokens("both headless and non-headless") == [
+            "headless",
+            "non-headless",
+        ]
+
+    def test_caixa_nao_importa(self) -> None:
+        assert masked_tokens("Headless mode") == ["Headless"]
+
+    def test_fronteira_de_palavra_e_respeitada(self) -> None:
+        assert mask("written headlessly here").tokens == {}
+
+    def test_round_trip(self) -> None:
+        text = "both headless and non-headless support"
+        result = mask(text)
+        assert restore(result.text, result.tokens) == text

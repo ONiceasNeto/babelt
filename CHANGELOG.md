@@ -3,6 +3,38 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 Versionamento semântico.
 
+## [0.2.0] — 2026-08-21
+
+Saída de `--help` deixa de ser um caso degenerado.
+
+### Adicionado
+
+- `manbr --help-of <cmd>` executa `<cmd> --help` (depois `-h`, depois
+  `--usage`) e traduz; `manbr --auto <cmd>` tenta `man` e cai para a ajuda
+  quando não há página. Os dois executam o binário, com timeout e sem nenhum
+  argumento além do flag de ajuda.
+- Segmentação de tabela de duas colunas (`SegmentKind.COLUMNS`): a coluna
+  esquerda passa intacta, cada célula da direita é traduzida sozinha e a
+  requebra acontece dentro da própria coluna. É metade do conteúdo de um
+  `--help` medido.
+- Mascaramento de grupo isolado (`{action}`, `[flags]`), sufixo de tipo
+  (`string[]`) e alternância solta (`yes|no`). Recall de 96,9% para 97,5%,
+  com falso positivo em prosa ainda em 1.
+- `manbr/literals.txt`: termos que nunca vão ao modelo, porque a tradução
+  deles perde informação. Começa com `headless` e `non-headless`.
+- Corpus de saída de `--help` em `tests/corpus/help/`, com `refresh-help.sh`.
+
+### Corrigido
+
+- `normalize` colapsava o intervalo de duas colunas quando ele tinha 2 ou 3
+  espaços, tratando alinhamento de `--help` como justificação de man page.
+- A profundidade de bloco contava o cabeçalho de seção, e por isso o segundo
+  parágrafo de uma DESCRIPTION podia ser classificado como literal.
+
+### Mudou
+
+- `PIPELINE_VERSION` para 3: o cache da 0.1.0 se invalida sozinho.
+
 ## [0.1.0] — 2026-08-21
 
 Primeira versão utilizável: traduz man pages para pt-BR sem rede.

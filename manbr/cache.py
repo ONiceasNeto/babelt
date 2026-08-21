@@ -41,9 +41,12 @@ __all__ = [
 #: `normalize` ou `validate`**: entra na chave, então um bump invalida tudo
 #: sozinho, sem apagar nada e sem migração.
 #:
+#: 3 — fase 5: mask reconhece grupo isolado ({action}, [flags]), sufixo de
+#:     tipo (string[]) e alternância solta; segment detecta tabela de duas
+#:     colunas e a profundidade de bloco deixou de contar o cabeçalho.
 #: 2 — fase 4: a seção SYNOPSIS passou a ser classificada como bloco literal.
 #: 1 — fases 1 a 3.1.
-PIPELINE_VERSION: Final = 2
+PIPELINE_VERSION: Final = 3
 
 #: Versão do formato em disco. Muda se o layout dos arquivos mudar.
 CACHE_FORMAT: Final = 1

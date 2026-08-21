@@ -27,6 +27,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 QUALITY_DIR = Path(__file__).parent
 CORPUS_DIR = _ROOT / "tests" / "corpus"
+HELP_CORPUS_DIR = CORPUS_DIR / "help"
 SAMPLE_PATH = QUALITY_DIR / "sample.md"
 SAMPLE_COUNT = 30
 
@@ -49,6 +50,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=0, help="máximo de segmentos")
     parser.add_argument("--no-sample", action="store_true")
+    parser.add_argument(
+        "--help-corpus",
+        action="store_true",
+        help="mede tests/corpus/help; os números são outros e não se misturam",
+    )
     args = parser.parse_args()
 
     timings = Timings()
@@ -67,15 +73,18 @@ def main() -> int:
         print("modelo não instalado; rode manbr.model.download()", file=sys.stderr)
         return 1
 
+    directory = HELP_CORPUS_DIR if args.help_corpus else CORPUS_DIR
     documents = {
         path.name: segment(normalize(path.read_text(encoding="utf-8")))
-        for path in sorted(CORPUS_DIR.glob("*.txt"))
+        for path in sorted(directory.glob("*.txt"))
     }
     every = [item for items in documents.values() for item in items]
+    # COLUMNS entra junto: a célula da direita é uma unidade de tradução como
+    # qualquer parágrafo, e deixá-la de fora mediria metade do corpus de help.
     prose = [
         item
         for item in every
-        if item.kind is SegmentKind.PROSE and item.text.strip()
+        if item.kind is not SegmentKind.LITERAL and item.text.strip()
     ]
     if args.limit:
         prose = prose[: args.limit]
@@ -139,10 +148,13 @@ def main() -> int:
     timings.corpus = time.perf_counter() - started
 
     # ---- uma página isolada -------------------------------------------
+    # ss(1) no corpus de man, katana no de help: as duas são a página de
+    # referência do respectivo formato.
+    single = "katana.txt" if args.help_corpus else "ss.txt"
     ss_prose = [
         item
-        for item in documents["ss.txt"]
-        if item.kind is SegmentKind.PROSE and item.text.strip()
+        for item in documents[single]
+        if item.kind is not SegmentKind.LITERAL and item.text.strip()
     ]
     # Tradutor novo de propósito: com o cache do corpus quente, esta medida
     # daria 0.0s e não diria nada sobre o custo real de abrir uma página.
