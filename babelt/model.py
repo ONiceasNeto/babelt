@@ -45,16 +45,9 @@ __all__ = [
 #: artefato convertido, não este repositório.
 MODEL_ID: Final = "Helsinki-NLP/opus-mt-tc-big-en-pt"
 
-#: De onde vem o artefato convertido (tar.gz).
-#:
-#: PENDENTE: preencher com a URL do release. Enquanto estiver assim, `download`
-#: falha com instrução em vez de tentar baixar de um lugar que não existe.
-MODEL_URL: Final = "PREENCHER://release/babelt-model-en-pt-int8.tar.gz"
+MODEL_URL: Final = "https://github.com/ONiceasNeto/babelt/releases/download/v0.5.0/babelt-model-en-pt-int8.tar.gz"
 
-#: SHA-256 do tar.gz, em minúsculas. Impresso por scripts/build-model.sh.
-#:
-#: PENDENTE: preencher junto com MODEL_URL.
-MODEL_SHA256: Final = "PREENCHER"
+MODEL_SHA256: Final = "0f4dfcc6ff9819babdf3914cca58166a73d439a10f03a3c0b48328b88a0c11ea"
 
 #: Marca que os dois valores acima ainda não foram preenchidos.
 _PLACEHOLDER: Final = "PREENCHER"
