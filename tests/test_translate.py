@@ -12,10 +12,10 @@ from pathlib import Path
 
 import pytest
 
-from manbr.mask import CLOSE, OPEN, mask
-from manbr.model import model_path
-from manbr.segment import Segment, SegmentKind
-from manbr.translate import (
+from babelt.mask import CLOSE, OPEN, mask
+from babelt.model import model_path
+from babelt.segment import Segment, SegmentKind
+from babelt.translate import (
     GLOSSARY,
     TranslationOutcome,
     Translator,
@@ -377,7 +377,7 @@ class TestCache:
 
 class TestBeam:
     def test_default_e_um(self) -> None:
-        from manbr.translate import BEAM_SIZE
+        from babelt.translate import BEAM_SIZE
 
         assert BEAM_SIZE == 1
         assert Translator(Path("/x"))._beam_size == 1

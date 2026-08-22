@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from manbr.normalize import normalize
-from manbr.segment import (
+from babelt.normalize import normalize
+from babelt.segment import (
     Segment,
     SegmentKind,
     reassemble,
@@ -393,3 +393,46 @@ class TestManPageNaoRegride:
         )
         kinds = {item.kind for item in segment(texto) if item.text.strip()}
         assert SegmentKind.PROSE in kinds
+
+
+# --------------------------------------------------------------------------
+# Fase 6: título de bloco de --help
+# --------------------------------------------------------------------------
+
+
+class TestTituloDeBloco:
+    @pytest.mark.parametrize(
+        "title",
+        ["Flags:", "INPUT:", "Common Commands:", "Usage:", "PORT SPECIFICATION:"],
+    )
+    def test_titulo_fica_sozinho_no_segmento(self, title: str) -> None:
+        texto = f"{title}\nOUTPUT:\n   -a    first\n"
+        textos = [item.text for item in segment(texto) if item.text.strip()]
+        assert title in textos
+        assert "OUTPUT:" in textos
+
+    def test_dois_titulos_nao_se_fundem(self) -> None:
+        """`Flags:` e `INPUT:` saíam fundidas como `flags: INPUT:` (fase 5)."""
+        rows = [item.text for item in segment("Flags:\nINPUT:\n") if item.text.strip()]
+        assert rows == ["Flags:", "INPUT:"]
+
+    def test_titulo_e_literal(self) -> None:
+        """Vocabulário fechado: quem traduz é headers.txt, não o modelo."""
+        [item] = [i for i in segment("Flags:\n") if i.text.strip()]
+        assert item.kind is SegmentKind.LITERAL
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "The following options are supported, in order:",
+            "Note that this is important, e.g.:",
+        ],
+    )
+    def test_frase_terminada_em_dois_pontos_nao_e_titulo(self, line: str) -> None:
+        [item] = [i for i in segment(line + "\n") if i.text.strip()]
+        assert item.kind is SegmentKind.PROSE
+
+    def test_titulo_indentado_nao_conta(self) -> None:
+        """Como o cabeçalho de seção, só vale na coluna zero."""
+        [item] = [i for i in segment("       Options:\n") if i.text.strip()]
+        assert item.kind is SegmentKind.PROSE

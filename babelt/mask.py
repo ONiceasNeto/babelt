@@ -5,7 +5,7 @@ Antes de traduzir, substituímos cada token crítico por um placeholder opaco
 ``⟦n⟧`` e guardamos o literal original. Depois da tradução, ``restore``
 recoloca os literais byte a byte.
 
-A garantia de integridade não está aqui — está em :mod:`manbr.validate`, que
+A garantia de integridade não está aqui — está em :mod:`babelt.validate`, que
 rejeita qualquer tradução que tenha perdido, duplicado ou inventado um
 placeholder. Este módulo só precisa ser reversível.
 """
@@ -61,6 +61,10 @@ _GROUP_BODY: Final = r"[^\s\[\]{}|]+(?:\|[^\s\[\]{}|]+)*"
 
 # Um lado da alternância solta: yes|no, A|c|d|r|t, --foo|--bar.
 _ALT_TOKEN: Final = r"[\w.@/*+-]+"
+
+# Um item de lista separada por vírgula: NAME, robotstxt, T:21-25. Começa e
+# termina em caractere de palavra.
+_LIST_ITEM: Final = r"\w(?:[\w:-]*\w)?"
 
 _EXTENSIONS_PATH: Final = Path(__file__).parent / "extensions.txt"
 _LITERALS_PATH: Final = Path(__file__).parent / "literals.txt"
@@ -302,6 +306,35 @@ _PATTERNS: Final[tuple[tuple[str, str], ...]] = (
     # 18. Alternância solta, fora de chaves: yes|no, A|c|d|r|t, tcp|udp. Os
     #     dois lados sem espaço em volta do |; com espaço é tabela ou prosa.
     ("alternation", rf"(?<![|\w]){_ALT_TOKEN}(?:\|{_ALT_TOKEN})+(?![|\w])"),
+    # 19. Lista de valores separada por vírgula, sem espaço: os campos de
+    #     `lsblk -o NAME,FSTYPE,LABEL`, os `all,robotstxt,sitemapxml` do
+    #     katana. Confirmado em uso real na fase 5: `all` saiu como `todos`
+    #     dentro do valor, e o leitor copiaria `todos` como se fosse opção.
+    #
+    #     **A ausência de espaço é a regra inteira.** Enumeração em prosa —
+    #     em português e em inglês — põe espaço depois da vírgula, e uma
+    #     lista de valores nunca põe, porque o espaço quebraria o argumento
+    #     no shell. Medido nos três corpora: zero casamento em prosa.
+    #
+    #     Três itens no mínimo, e não dois: `e.g.` e `i.e.` não têm vírgula,
+    #     mas `foo,bar` de duas partes aparece em prosa inglesa como par
+    #     citado com bem mais frequência que como valor.
+    #
+    #     Só dígitos e vírgula fica de fora: `1,234,567` é número com
+    #     separador de milhar, escrito em prosa. Mascarar não corromperia
+    #     nada, mas é placeholder a mais numa frase traduzível, e placeholder
+    #     perdido reprova o parágrafo — a mesma conta que deixou `[1]` de fora
+    #     na fase 5.
+    #
+    #     O item aceita `:` e `-` no meio — `U:53,111,T:21-25,80` da nmap é
+    #     uma lista só, e mascarar `53,111,T` deixando `U:` e `:21-25,80`
+    #     expostos seria a classe PARCIAL, pior que não mascarar. O item
+    #     precisa começar e terminar em caractere de palavra, e é isso que
+    #     mantém o ponto final da frase fora do token.
+    (
+        "commalist",
+        rf"(?<![\w,.-])(?![\d,]+(?![\w,])){_LIST_ITEM}(?:,{_LIST_ITEM}){{2,}}(?![\w,])",
+    ),
 )
 
 _MASK_RE: Final = re.compile(
@@ -350,7 +383,7 @@ def restore(text: str, tokens: dict[int, str]) -> str:
     """Recoloca os literais e desfaz o escape das chaves.
 
     Um placeholder cujo índice não esteja em ``tokens`` é deixado intacto:
-    detectar isso é papel de :func:`manbr.validate.validate`, que deve rodar
+    detectar isso é papel de :func:`babelt.validate.validate`, que deve rodar
     antes.
     """
 

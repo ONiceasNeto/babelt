@@ -1,6 +1,6 @@
-# manbr — `katana --help`, antes e depois da fase 5
+# babelt — `katana --help`, antes e depois da fase 5
 
-Gerado com `manbr --help-of katana`, cache frio, beam 1. Nada foi retocado.
+Gerado com `babelt --help-of katana`, cache frio, beam 1. Nada foi retocado.
 
 ## Original
 
@@ -106,18 +106,38 @@ sozinha, com o próprio lugar no cache, e a que não cabe na largura quebra
 **dentro da própria coluna** — a continuação alinha na coluna, nunca invade a
 esquerda.
 
-## O que continua errado
+## Depois da fase 6
+
+```
+Katana is a fast crawler focused on execution in automation pipelines offering
+both headless and non-headless crawling.
+
+Uso:
+  katana [flags]
+
+Opções:
+ENTRADA:
+   -u, -list string[]     url de destino / lista para rastrear
+   -resume string         resume scan using resume.cfg
+   -e, -exclude string[]  exclude host matching specified filter ('cdn',
+                          'private-ips', cidr, ip, regex)
+```
+
+Duas correções da fase 6 aparecem nestas linhas: `Flags:` e `INPUT:` não estão
+mais fundidas em `flags: INPUT:` — viraram `Opções:` e `ENTRADA:`, traduzidas
+por tabela, cada uma na própria linha — e `CONFIGURATION:` virou
+`CONFIGURAÇÃO:` pelo mesmo caminho.
+
+## O que continua errado (medido na fase 5)
 
 Vale registrar o que a fase não resolveu, porque está visível na mesma saída:
 
-- **`Flags:` e `INPUT:` saíram na mesma linha.** As duas estão no mesmo bloco,
-  ambas na coluna 0, e viraram um segmento de prosa só; o modelo devolveu as
-  duas juntas. É cosmético e é da mesma família do título de seção — vocabulário
-  fechado, que a tabela de `headers.txt` resolveria.
-- **`all,robotstxt,sitemapxml` virou `todos,robotstxt,sitemapxml`.** Uma lista
-  de valores separada por vírgula não é mascarada, e `all` foi traduzido no
-  meio dela. É uma corrupção de verdade — o leitor copiaria `todos` como valor.
-  Medido: 13 listas assim chegam ao modelo nos dois corpora. Ver README-fase5.
+- ~~**`Flags:` e `INPUT:` saíram na mesma linha.**~~ Corrigido na fase 6, e
+  exatamente por onde este parágrafo apontava: título de bloco virou cabeçalho,
+  isolado no próprio segmento e traduzido por `headers.txt`.
+- ~~**`all,robotstxt,sitemapxml` virou `todos,robotstxt,sitemapxml`.**~~
+  Corrigido na fase 6: lista separada por vírgula virou padrão de
+  mascaramento. Catorze casamentos nos dois corpora, zero em prosa.
 - **"rastejar", "habilit jsluice parsing in javascript ficheiro".** Qualidade
   do modelo. Nenhuma regra desta fase mede fluência, e continua assim.
 - **A primeira frase ficou em inglês.** É consequência direta de mascarar

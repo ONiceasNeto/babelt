@@ -4,8 +4,9 @@ O número que mais importa é o último: quantos segmentos PROSE passam do
 orçamento prático do modelo. Se forem muitos, a estratégia
 parágrafo -> sentença precisa ser revista antes da fase 3.
 
-    python tests/coverage/measure_segment.py            # corpus de man pages
-    python tests/coverage/measure_segment.py --help-corpus  # corpus de --help
+    python tests/coverage/measure_segment.py                  # man pages
+    python tests/coverage/measure_segment.py --corpus help    # saída de --help
+    python tests/coverage/measure_segment.py --corpus nonprose  # ls, ps, logs
 
 Os dois corpora são medidos **separadamente**, e de propósito: uma tabela de
 duas colunas é maioria num ``--help`` e rara numa man page, então a média dos
@@ -21,12 +22,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from manbr.mask import mask  # noqa: E402
-from manbr.normalize import normalize  # noqa: E402
-from manbr.segment import Segment, SegmentKind, reassemble, segment  # noqa: E402
+from babelt.mask import mask  # noqa: E402
+from babelt.normalize import normalize  # noqa: E402
+from babelt.segment import Segment, SegmentKind, reassemble, segment  # noqa: E402
 
 CORPUS_DIR = Path(__file__).resolve().parents[1] / "corpus"
-HELP_CORPUS_DIR = CORPUS_DIR / "help"
+CORPUS_DIRS = {
+    "man": CORPUS_DIR,
+    "help": CORPUS_DIR / "help",
+    "nonprose": CORPUS_DIR / "nonprose",
+}
 
 #: Orçamento prático por segmento de prosa, em tokens.
 TOKEN_BUDGET = 400
@@ -79,12 +84,13 @@ def is_blank(item: Segment) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Mede a segmentação.")
     parser.add_argument(
-        "--help-corpus",
-        action="store_true",
-        help="mede tests/corpus/help em vez das man pages",
+        "--corpus",
+        choices=sorted(CORPUS_DIRS),
+        default="man",
+        help="qual corpus medir (padrão: man)",
     )
     args = parser.parse_args()
-    directory = HELP_CORPUS_DIR if args.help_corpus else CORPUS_DIR
+    directory = CORPUS_DIRS[args.corpus]
 
     documents: dict[str, list[Segment]] = {}
     for path in sorted(directory.glob("*.txt")):
@@ -100,7 +106,7 @@ def main() -> int:
     columns = [item for item in content if item.kind is SegmentKind.COLUMNS]
 
     print("=" * 72)
-    print(f"SEGMENTAÇÃO DO CORPUS DE {'--HELP' if args.help_corpus else 'MAN PAGES'}")
+    print(f"SEGMENTAÇÃO DO CORPUS: {args.corpus.upper()}")
     print("=" * 72)
     print(f"arquivos                 : {len(documents)}")
     print(f"segmentos (com brancos)  : {len(every)}")
@@ -170,7 +176,7 @@ def main() -> int:
         print(f"    {tokens_of(item.text):4} tokens  {head}…")
 
     # A seção seguinte é ancorada na amostra anotada, que é de man page.
-    if args.help_corpus:
+    if args.corpus != "man":
         return _masked_tally(content)
 
     print()

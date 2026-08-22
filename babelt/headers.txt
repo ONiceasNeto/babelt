@@ -69,3 +69,41 @@ INSTALLATION	INSTALAÇÃO
 REQUIREMENTS	REQUISITOS
 LICENSE	LICENÇA
 ACKNOWLEDGEMENTS	AGRADECIMENTOS
+
+# --- títulos de bloco de saída de --help (fase 6) ---
+#
+# `--help` não tem seção de man page; tem uma linha de título terminada em
+# dois-pontos. É o mesmo vocabulário fechado, e o mesmo motivo para não deixar
+# com o modelo: na fase 5 `Flags:` e `INPUT:` saíram fundidas como
+# `flags: INPUT:`, com a maiúscula perdida.
+#
+# Os dois-pontos fazem parte da chave: a busca é exata, e é isso que impede
+# casar a palavra `Usage` solta dentro de uma frase.
+#
+# Títulos específicos de uma ferramenta (SCOPE:, HEADLESS:, RATE-LIMIT:) não
+# estão aqui de propósito: ficam em inglês, que é a falha por omissão que este
+# arquivo declara desde a fase 3.
+Usage:	Uso:
+USAGE:	USO:
+Options:	Opções:
+OPTIONS:	OPÇÕES:
+Flags:	Opções:
+FLAGS:	OPÇÕES:
+Commands:	Comandos:
+COMMANDS:	COMANDOS:
+Arguments:	Argumentos:
+ARGUMENTS:	ARGUMENTOS:
+Examples:	Exemplos:
+EXAMPLES:	EXEMPLOS:
+Global Options:	Opções globais:
+Global Flags:	Opções globais:
+Common Commands:	Comandos comuns:
+Management Commands:	Comandos de gerenciamento:
+Positional Arguments:	Argumentos posicionais:
+POSITIONAL ARGUMENTS:	ARGUMENTOS POSICIONAIS:
+INPUT:	ENTRADA:
+OUTPUT:	SAÍDA:
+CONFIGURATION:	CONFIGURAÇÃO:
+DEBUG:	DEPURAÇÃO:
+FILTER:	FILTRO:
+UPDATE:	ATUALIZAÇÃO:

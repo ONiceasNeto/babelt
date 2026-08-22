@@ -5,14 +5,14 @@ atrapalham tanto a segmentação quanto a tradução:
 
 - **Overstrike do roff.** Negrito é ``X\\bX``, sublinhado é ``_\\bX``. Sem
   remover, cada letra em negrito vira três caracteres e nenhum padrão de
-  :mod:`manbr.mask` reconhece mais nada.
+  :mod:`babelt.mask` reconhece mais nada.
 - **Hifenização de fim de linha.** ``notifica‐`` numa linha e ``tion`` na
   seguinte. Uma palavra partida ao meio não é traduzível.
 - **Justificação.** ``ss  is  used  to`` com dois e três espaços entre
   palavras, que o modelo não deve ver como estrutura.
 
 O que este módulo **não** faz: não decide o que é prosa e o que é bloco
-literal. Isso é de :mod:`manbr.segment`. A única concessão é a colagem de
+literal. Isso é de :mod:`babelt.segment`. A única concessão é a colagem de
 espaços, que precisa acontecer aqui — ``normalize`` tem de ser o ponto fixo
 que ``reassemble(segment(...))`` reproduz — e por isso usa um limiar medido
 em vez de classificação: ver :data:`MAX_JUSTIFICATION_RUN`.
@@ -140,7 +140,7 @@ def _dehyphenate(lines: list[str]) -> list[str]:
 
 
 def normalize(text: str) -> str:
-    """Deixa a saída pronta para :func:`manbr.segment.segment`.
+    """Deixa a saída pronta para :func:`babelt.segment.segment`.
 
     A ordem importa: overstrike antes de tudo, porque o backspace desloca
     colunas e separa o hífen do contexto; tabs depois dele, porque dependem de

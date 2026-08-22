@@ -32,7 +32,7 @@ TOOLS=(
   kubectl:kubectl:--help
 )
 
-LINES=${MANBR_CORPUS_LINES:-160}
+LINES=${BABELT_CORPUS_LINES:-160}
 
 want=("$@")
 

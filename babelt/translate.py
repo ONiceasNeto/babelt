@@ -2,7 +2,7 @@
 
 A regra do projeto vale aqui inteira: **não traduzir é sempre melhor que
 corromper um comando**. Toda tradução passa por
-:func:`manbr.validate.validate` antes de ser aceita, e uma que não passe é
+:func:`babelt.validate.validate` antes de ser aceita, e uma que não passe é
 descartada — a linha sai em inglês.
 
 A recuperação por sentença existe porque a rejeição é tudo-ou-nada por
@@ -19,9 +19,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
-from manbr.mask import CLOSE, OPEN, mask, restore
-from manbr.segment import Segment, SegmentKind
-from manbr.validate import split_sentences, validate, validate_structure
+from babelt.mask import CLOSE, OPEN, mask, restore
+from babelt.segment import Segment, SegmentKind
+from babelt.validate import split_sentences, validate, validate_structure
 
 if TYPE_CHECKING:  # pragma: no cover
     import sentencepiece

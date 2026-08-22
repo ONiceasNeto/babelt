@@ -22,12 +22,16 @@ _ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_ROOT))
 
 if TYPE_CHECKING:  # pragma: no cover
-    from manbr.segment import Segment
-    from manbr.translate import TranslationOutcome
+    from babelt.segment import Segment
+    from babelt.translate import TranslationOutcome
 
 QUALITY_DIR = Path(__file__).parent
 CORPUS_DIR = _ROOT / "tests" / "corpus"
-HELP_CORPUS_DIR = CORPUS_DIR / "help"
+CORPUS_DIRS = {
+    "man": CORPUS_DIR,
+    "help": CORPUS_DIR / "help",
+    "nonprose": CORPUS_DIR / "nonprose",
+}
 SAMPLE_PATH = QUALITY_DIR / "sample.md"
 SAMPLE_COUNT = 30
 
@@ -51,29 +55,30 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=0, help="máximo de segmentos")
     parser.add_argument("--no-sample", action="store_true")
     parser.add_argument(
-        "--help-corpus",
-        action="store_true",
-        help="mede tests/corpus/help; os números são outros e não se misturam",
+        "--corpus",
+        choices=sorted(CORPUS_DIRS),
+        default="man",
+        help="qual corpus medir; os números são outros e não se misturam",
     )
     args = parser.parse_args()
 
     timings = Timings()
 
     started = time.perf_counter()
-    from manbr.mask import mask
-    from manbr.model import is_installed, model_path
-    from manbr.normalize import normalize
-    from manbr.segment import SegmentKind, segment
-    from manbr.translate import Translator, split_sentences
-    from manbr.validate import validate, validate_structure
+    from babelt.mask import mask
+    from babelt.model import is_installed, model_path
+    from babelt.normalize import normalize
+    from babelt.segment import SegmentKind, segment
+    from babelt.translate import Translator, split_sentences
+    from babelt.validate import validate, validate_structure
 
     timings.imports = time.perf_counter() - started
 
     if not is_installed():
-        print("modelo não instalado; rode manbr.model.download()", file=sys.stderr)
+        print("modelo não instalado; rode babelt.model.download()", file=sys.stderr)
         return 1
 
-    directory = HELP_CORPUS_DIR if args.help_corpus else CORPUS_DIR
+    directory = CORPUS_DIRS[args.corpus]
     documents = {
         path.name: segment(normalize(path.read_text(encoding="utf-8")))
         for path in sorted(directory.glob("*.txt"))
@@ -100,7 +105,7 @@ def main() -> int:
     oov_total = 0
     oov_coverage = 0
     oov_examples: list[tuple[str, list[str]]] = []
-    from manbr.translate import to_wire
+    from babelt.translate import to_wire
 
     for item, result in zip(prose, masked_all, strict=True):
         pieces, coverage = translator.oov_diagnosis(to_wire(result.text))
@@ -150,7 +155,9 @@ def main() -> int:
     # ---- uma página isolada -------------------------------------------
     # ss(1) no corpus de man, katana no de help: as duas são a página de
     # referência do respectivo formato.
-    single = "katana.txt" if args.help_corpus else "ss.txt"
+    single = {"man": "ss.txt", "help": "katana.txt", "nonprose": "ps-aux.txt"}[
+        args.corpus
+    ]
     ss_prose = [
         item
         for item in documents[single]

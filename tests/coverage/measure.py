@@ -1,4 +1,4 @@
-"""Mede a cobertura de :func:`manbr.mask.mask` contra a anotação manual.
+"""Mede a cobertura de :func:`babelt.mask.mask` contra a anotação manual.
 
 Round-trip prova que mask e restore são inversas. Não prova que mask protege
 o que precisa ser protegido: uma mask que não mascara nada passa no round-trip
@@ -27,7 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from manbr.mask import CLOSE, OPEN, mask  # noqa: E402
+from babelt.mask import CLOSE, OPEN, mask  # noqa: E402
 
 COVERAGE_DIR = Path(__file__).parent
 SAMPLE_PATH = COVERAGE_DIR / "sample.tsv"

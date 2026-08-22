@@ -1,0 +1,13 @@
+1: lo    inet 127.0.0.1/8 scope host lo\       valid_lft forever preferred_lft forever
+1: lo    inet6 ::1/128 scope host noprefixroute \       valid_lft forever preferred_lft forever
+3: wlp9s0    inet 192.168.18.93/24 brd 192.168.18.255 scope global dynamic noprefixroute wlp9s0\       valid_lft 2430sec preferred_lft 2430sec
+3: wlp9s0    inet6 fe80::cdeb:ddb:45d5:babe/64 scope link noprefixroute \       valid_lft forever preferred_lft forever
+4: tailscale0    inet 100.79.180.66/32 scope global tailscale0\       valid_lft forever preferred_lft forever
+4: tailscale0    inet6 fd7a:115c:a1e0::2538:b443/128 scope global \       valid_lft forever preferred_lft forever
+4: tailscale0    inet6 fe80::b991:3333:6708:4acd/64 scope link stable-privacy \       valid_lft forever preferred_lft forever
+5: br-2f40caa250b0    inet 172.18.0.1/16 brd 172.18.255.255 scope global br-2f40caa250b0\       valid_lft forever preferred_lft forever
+5: br-2f40caa250b0    inet6 fe80::582f:a6ff:fe4c:ee35/64 scope link \       valid_lft forever preferred_lft forever
+6: docker0    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0\       valid_lft forever preferred_lft forever
+7: vethf9b3d23    inet6 fe80::1462:fbff:fe74:e313/64 scope link \       valid_lft forever preferred_lft forever
+8: veth243874a    inet6 fe80::e84f:6bff:fe61:b17b/64 scope link \       valid_lft forever preferred_lft forever
+9: vethce6d032    inet6 fe80::28e8:7dff:fe32:3f65/64 scope link \       valid_lft forever preferred_lft forever

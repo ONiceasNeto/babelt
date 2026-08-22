@@ -7,13 +7,15 @@ Isso é testável sem modelo.
 
 from __future__ import annotations
 
+import io
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
-from manbr.__main__ import (
+from babelt.__main__ import (
     EXIT_ERROR,
     EXIT_INTERRUPTED,
     EXIT_NOT_FOUND,
@@ -24,17 +26,19 @@ from manbr.__main__ import (
     _encode,
     HELP_FLAGS,
     build_parser,
+    choose_pager,
     main,
     output_width,
+    emit,
     read_help,
     read_source,
     rewrap,
     translate_document,
 )
-from manbr.cache import Cache, make_key
-from manbr.model import model_path
-from manbr.segment import Segment, SegmentKind
-from manbr.translate import TranslationOutcome, Translator
+from babelt.cache import Cache, make_key
+from babelt.model import ModelError, model_path
+from babelt.segment import Segment, SegmentKind
+from babelt.translate import TranslationOutcome, Translator
 
 needs_model = pytest.mark.model
 
@@ -176,8 +180,12 @@ class TestTraducaoDeDocumento:
 # --------------------------------------------------------------------------
 
 
+# Prosa de verdade, e não `Sentence number 3 explains one option.`: desde a
+# fase 6 o documento precisa ter palavras funcionais suficientes para passar
+# pela guarda de prosa, e a frase sintética antiga não tinha nenhuma.
 LONG_PAGE = "DESCRIPTION\n" + "".join(
-    f"       Sentence number {index} explains one option.\n\n"
+    f"       This is the option number {index}, and it tells the program what "
+    f"to do with the file when there is no other one.\n\n"
     for index in range(40)
 )
 
@@ -231,9 +239,9 @@ class TestInterrupcao:
         monkeypatch.setattr(sys.stdin, "isatty", lambda: False)
         monkeypatch.setattr(sys.stdin, "read", lambda: LONG_PAGE)
         monkeypatch.setattr(sys.stdout, "isatty", lambda: False)
-        monkeypatch.setattr("manbr.__main__.is_installed", lambda directory: True)
+        monkeypatch.setattr("babelt.__main__.is_installed", lambda directory: True)
         monkeypatch.setattr(
-            "manbr.__main__.Translator",
+            "babelt.__main__.Translator",
             lambda directory, beam_size=1: InterruptingTranslator(),
         )
         monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
@@ -294,7 +302,12 @@ class TestRequebra:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv("MANWIDTH", "80")
-        longa = "DESCRIPTION\n       " + " ".join(["sockets"] * 80) + "\n"
+        # Prosa de verdade: `"sockets" * 80` não tem palavra funcional nenhuma
+        # e desde a fase 6 seria barrado pela guarda de prosa antes de chegar
+        # à requebra.
+        longa = "DESCRIPTION\n       " + " ".join(
+            ["it shows the sockets that are open on the host"] * 12
+        ) + "\n"
         texto, _ = translate_document(
             longa, FakeTranslator(), None, model="m", beam=1
         )
@@ -322,15 +335,15 @@ class FakeRun:
 class TestLeituraDeAjuda:
     def test_usa_help_quando_responde(self, monkeypatch: pytest.MonkeyPatch) -> None:
         run = FakeRun({"--help": "Usage: foo [flags]\n"})
-        monkeypatch.setattr("manbr.__main__.shutil.which", lambda _: "/usr/bin/foo")
-        monkeypatch.setattr("manbr.__main__.subprocess.run", run)
+        monkeypatch.setattr("babelt.__main__.shutil.which", lambda _: "/usr/bin/foo")
+        monkeypatch.setattr("babelt.__main__.subprocess.run", run)
         assert read_help("foo") == "Usage: foo [flags]\n"
         assert run.chamadas == [["foo", "--help"]]
 
     def test_cai_para_h_e_depois_usage(self, monkeypatch: pytest.MonkeyPatch) -> None:
         run = FakeRun({"--usage": "uso: foo\n"})
-        monkeypatch.setattr("manbr.__main__.shutil.which", lambda _: "/usr/bin/foo")
-        monkeypatch.setattr("manbr.__main__.subprocess.run", run)
+        monkeypatch.setattr("babelt.__main__.shutil.which", lambda _: "/usr/bin/foo")
+        monkeypatch.setattr("babelt.__main__.subprocess.run", run)
         assert read_help("foo") == "uso: foo\n"
         assert [c[-1] for c in run.chamadas] == list(HELP_FLAGS)
 
@@ -339,39 +352,39 @@ class TestLeituraDeAjuda:
     ) -> None:
         """Executar o binário é a superfície de risco; ela fica no mínimo."""
         run = FakeRun({"--help": "ajuda\n"})
-        monkeypatch.setattr("manbr.__main__.shutil.which", lambda _: "/usr/bin/foo")
-        monkeypatch.setattr("manbr.__main__.subprocess.run", run)
+        monkeypatch.setattr("babelt.__main__.shutil.which", lambda _: "/usr/bin/foo")
+        monkeypatch.setattr("babelt.__main__.subprocess.run", run)
         read_help("foo")
         assert all(len(argv) == 2 for argv in run.chamadas)
 
     def test_comando_ausente(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr("manbr.__main__.shutil.which", lambda _: None)
+        monkeypatch.setattr("babelt.__main__.shutil.which", lambda _: None)
         with pytest.raises(FileNotFoundError):
             read_help("naoexiste")
 
     def test_nenhum_flag_responde(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr("manbr.__main__.shutil.which", lambda _: "/usr/bin/foo")
-        monkeypatch.setattr("manbr.__main__.subprocess.run", FakeRun({}))
+        monkeypatch.setattr("babelt.__main__.shutil.which", lambda _: "/usr/bin/foo")
+        monkeypatch.setattr("babelt.__main__.subprocess.run", FakeRun({}))
         with pytest.raises(LookupError):
             read_help("foo")
 
 
 class TestEscolhaDaFonte:
     def test_padrao_e_man(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr("manbr.__main__.read_manpage", lambda cmd: f"man de {cmd}")
+        monkeypatch.setattr("babelt.__main__.read_manpage", lambda cmd: f"man de {cmd}")
         assert read_source("ss", help_of=False, auto=False) == "man de ss"
 
     def test_help_of_nao_chama_man(self, monkeypatch: pytest.MonkeyPatch) -> None:
         def nunca(cmd: str) -> str:
             raise AssertionError("man não devia ser chamado")
 
-        monkeypatch.setattr("manbr.__main__.read_manpage", nunca)
-        monkeypatch.setattr("manbr.__main__.read_help", lambda cmd: f"ajuda de {cmd}")
+        monkeypatch.setattr("babelt.__main__.read_manpage", nunca)
+        monkeypatch.setattr("babelt.__main__.read_help", lambda cmd: f"ajuda de {cmd}")
         assert read_source("katana", help_of=True, auto=False) == "ajuda de katana"
 
     def test_auto_prefere_man(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr("manbr.__main__.read_manpage", lambda cmd: "a man page")
-        monkeypatch.setattr("manbr.__main__.read_help", lambda cmd: "a ajuda")
+        monkeypatch.setattr("babelt.__main__.read_manpage", lambda cmd: "a man page")
+        monkeypatch.setattr("babelt.__main__.read_help", lambda cmd: "a ajuda")
         assert read_source("ss", help_of=False, auto=True) == "a man page"
 
     def test_auto_cai_para_help_sem_pagina(
@@ -380,8 +393,8 @@ class TestEscolhaDaFonte:
         def sem_pagina(cmd: str) -> str:
             raise LookupError("No manual entry for katana")
 
-        monkeypatch.setattr("manbr.__main__.read_manpage", sem_pagina)
-        monkeypatch.setattr("manbr.__main__.read_help", lambda cmd: "a ajuda")
+        monkeypatch.setattr("babelt.__main__.read_manpage", sem_pagina)
+        monkeypatch.setattr("babelt.__main__.read_help", lambda cmd: "a ajuda")
         assert read_source("katana", help_of=False, auto=True) == "a ajuda"
         assert "tentando --help" in capsys.readouterr().err
 
@@ -393,8 +406,8 @@ class TestEscolhaDaFonte:
         def outro_erro(cmd: str) -> str:
             raise LookupError("man: invalid section")
 
-        monkeypatch.setattr("manbr.__main__.read_manpage", outro_erro)
-        monkeypatch.setattr("manbr.__main__.read_help", lambda cmd: "a ajuda")
+        monkeypatch.setattr("babelt.__main__.read_manpage", outro_erro)
+        monkeypatch.setattr("babelt.__main__.read_help", lambda cmd: "a ajuda")
         with pytest.raises(LookupError, match="invalid section"):
             read_source("foo", help_of=False, auto=True)
 
@@ -413,7 +426,7 @@ class TestArgumentosDoModoHelp:
     def test_ferramenta_ausente_da_127(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        monkeypatch.setattr("manbr.__main__.shutil.which", lambda _: None)
+        monkeypatch.setattr("babelt.__main__.shutil.which", lambda _: None)
         monkeypatch.setattr(sys.stdout, "isatty", lambda: False)
         assert main(["--help-of", "naoexiste"]) == EXIT_NOT_FOUND
         assert "não está instalado" in capsys.readouterr().err
@@ -444,6 +457,114 @@ class TestRequebraDeColuna:
         [saida] = rewrap([item], 80)
         assert saida.left == "  -a"
         assert saida.column == 8
+
+
+# --------------------------------------------------------------------------
+# Fase 6: pager
+# --------------------------------------------------------------------------
+
+
+class TestEscolhaDePager:
+    def test_padrao_nao_limpa_a_tela_e_sai_sozinho(self) -> None:
+        assert choose_pager() == "less -RFX"
+
+    def test_pager_do_ambiente(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("PAGER", "more")
+        assert choose_pager() == "more"
+
+    def test_babelt_pager_tem_precedencia(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("PAGER", "more")
+        monkeypatch.setenv("BABELT_PAGER", "less -R")
+        assert choose_pager() == "less -R"
+
+    def test_variavel_vazia_nao_conta(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("BABELT_PAGER", "  ")
+        monkeypatch.setenv("PAGER", "more")
+        assert choose_pager() == "more"
+
+
+class TestQuandoPaginar:
+    def _pager_espiao(self, monkeypatch: pytest.MonkeyPatch) -> list[str]:
+        chamado: list[str] = []
+        monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+        monkeypatch.setattr("babelt.__main__.terminal_height", lambda: 24)
+        monkeypatch.setattr("babelt.__main__.subprocess.Popen", _espiao(chamado))
+        return chamado
+
+    def test_saida_curta_nao_pagina(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        chamado = self._pager_espiao(monkeypatch)
+        emit("uma\nduas\ntrês\n")
+        assert chamado == []
+        assert "duas" in capsys.readouterr().out
+
+    def test_saida_longa_pagina(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        chamado = self._pager_espiao(monkeypatch)
+        emit("linha\n" * 100)
+        assert chamado == ["less -RFX"]
+
+    def test_no_pager_desliga(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        chamado = self._pager_espiao(monkeypatch)
+        emit("linha\n" * 100, paginate=False)
+        assert chamado == []
+
+    def test_fora_do_terminal_nunca_pagina(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        chamado: list[str] = []
+        monkeypatch.setattr(sys.stdout, "isatty", lambda: False)
+        monkeypatch.setattr("babelt.__main__.subprocess.Popen", _espiao(chamado))
+        emit("linha\n" * 100)
+        assert chamado == []
+
+
+def _espiao(chamado: list[str]) -> Callable[..., "_PagerFalso"]:
+    def abrir(cmd: str, **kwargs: object) -> "_PagerFalso":
+        chamado.append(cmd)
+        return _PagerFalso()
+
+    return abrir
+
+
+class _PagerFalso:
+    def __init__(self) -> None:
+        self.stdin = io.StringIO()
+
+    def wait(self) -> int:
+        return 0
+
+
+# --------------------------------------------------------------------------
+# Fase 7: falha ao obter o modelo
+# --------------------------------------------------------------------------
+
+
+class TestFalhaAoBaixar:
+    def test_erro_de_modelo_nao_vira_traceback(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        tmp_path: Path,
+    ) -> None:
+        """Build sem URL publicada, rede fora, hash errado: tudo degrada."""
+        monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
+        monkeypatch.setattr(sys.stderr, "isatty", lambda: True)
+        monkeypatch.setattr(sys.stdout, "isatty", lambda: False)
+        monkeypatch.setattr("builtins.input", lambda _: "s")
+        monkeypatch.setattr("babelt.__main__.is_installed", lambda directory: False)
+
+        def falha(progress: bool = True) -> None:
+            raise ModelError("esta build não tem URL de modelo publicada")
+
+        monkeypatch.setattr("babelt.__main__.download", falha)
+        # Com stdin num terminal — que é o que faz `ensure_model` perguntar —
+        # a entrada precisa vir de um comando, não do pipe.
+        monkeypatch.setattr("babelt.__main__.read_manpage", lambda cmd: PAGE)
+        assert main(["ss", "--model-path", str(tmp_path)]) == EXIT_ERROR
+        captured = capsys.readouterr()
+        assert "URL de modelo publicada" in captured.err
+        assert "ss - another utility" in captured.out  # degradou para o original
 
 
 class TestSerializacao:
@@ -485,7 +606,7 @@ class TestProgresso:
 class TestPontaAPonta:
     def test_stdin_produz_portugues(self, tmp_path: Path) -> None:
         result = subprocess.run(
-            [sys.executable, "-m", "manbr", "--no-cache"],
+            [sys.executable, "-m", "babelt", "--no-cache"],
             input=PAGE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -500,7 +621,7 @@ class TestPontaAPonta:
 
     def test_stdout_e_stderr_nao_se_misturam(self, tmp_path: Path) -> None:
         result = subprocess.run(
-            [sys.executable, "-m", "manbr", "--stats"],
+            [sys.executable, "-m", "babelt", "--stats"],
             input=PAGE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -508,21 +629,21 @@ class TestPontaAPonta:
             env={**_env(), "XDG_CACHE_HOME": str(tmp_path)},
             check=False,
         )
-        assert "manbr:" not in result.stdout
+        assert "babelt:" not in result.stdout
         assert "segmentos:" in result.stderr
 
     def test_cache_frio_e_quente_dao_a_mesma_saida(self, tmp_path: Path) -> None:
         env = {**_env(), "XDG_CACHE_HOME": str(tmp_path)}
         first = subprocess.run(
-            [sys.executable, "-m", "manbr"],
+            [sys.executable, "-m", "babelt"],
             input=PAGE, stdout=subprocess.PIPE, text=True, env=env, check=False,
         )
         second = subprocess.run(
-            [sys.executable, "-m", "manbr"],
+            [sys.executable, "-m", "babelt"],
             input=PAGE, stdout=subprocess.PIPE, text=True, env=env, check=False,
         )
         assert first.stdout == second.stdout
-        assert (tmp_path / "manbr" / "meta.json").is_file()
+        assert (tmp_path / "babelt" / "meta.json").is_file()
 
 
 def _env() -> dict[str, str]:
@@ -533,3 +654,103 @@ def _env() -> dict[str, str]:
         for key, value in os.environ.items()
         if key in {"PATH", "HOME", "LANG", "LC_ALL", "XDG_DATA_HOME"}
     }
+
+
+# --------------------------------------------------------------------------
+# Fase 6: guarda de prosa
+# --------------------------------------------------------------------------
+
+
+LISTAGEM = "\n".join(
+    [
+        "accountsservice",
+        "aclocal",
+        "alsa",
+        "applications",
+        "backgrounds",
+        "bash-completion",
+        "binfmts",
+        "ca-certificates",
+        "dbus-1",
+        "dict",
+        "doc",
+        "fonts",
+        "Labs",
+        "nuclei-templates",
+        "sounds",
+        "themes",
+        "xml",
+        "zoneinfo",
+        "icons",
+        "locale",
+        "man",
+        "pixmaps",
+    ]
+)
+
+
+class TestGuardaDeProsa:
+    def test_listagem_de_arquivos_passa_intacta(self, tmp_path: Path) -> None:
+        """O caso que abriu a fase: `ls | babelt` traduzia `Labs`."""
+        translator = FakeTranslator()
+        texto, counters = translate_document(
+            LISTAGEM, translator, None, model="m", beam=1
+        )
+        assert translator.calls == 0  # nenhuma inferência gasta
+        assert counters["not_prose"] > 0
+        assert "Labs" in texto
+        assert "nuclei-templates" in texto
+
+    def test_prosa_continua_passando(self) -> None:
+        translator = FakeTranslator()
+        _, counters = translate_document(
+            LONG_PAGE, translator, None, model="m", beam=1
+        )
+        assert not counters.get("not_prose")
+        assert translator.calls > 0
+
+    def test_aviso_em_stderr(self, capsys: pytest.CaptureFixture[str]) -> None:
+        translate_document(LISTAGEM, FakeTranslator(), None, model="m", beam=1)
+        assert "não parece prosa" in capsys.readouterr().err
+
+    def test_documento_curto_nao_e_julgado(self) -> None:
+        """Sem amostra não há julgamento: errar para o lado de traduzir."""
+        translator = FakeTranslator()
+        _, counters = translate_document(
+            "NAME\n       ss - a tool\n", translator, None, model="m", beam=1
+        )
+        assert not counters.get("not_prose")
+
+    def test_saida_e_byte_a_byte_a_entrada(self) -> None:
+        """Intacto quer dizer intacto: sem normalizar e sem requebrar.
+
+        Passar pelo pipeline colapsaria o espaço de alinhamento de `ps aux` e
+        juntaria as linhas de um `ls` num parágrafo. O documento não é prosa,
+        e o pipeline inteiro é para prosa.
+        """
+        tabela = (
+            "USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START\n"
+            "root           1  0.0  0.2  22836 13832 ?        Ss   Aug18\n"
+            "root           2  0.0  0.0      0     0 ?        S    Aug18\n"
+            "root           3  0.0  0.0      0     0 ?        S    Aug18\n"
+            "avahi        712  0.0  0.0   8100  4224 ?        Ss   Aug18\n"
+        )
+        texto, counters = translate_document(
+            tabela, FakeTranslator(), None, model="m", beam=1
+        )
+        assert counters["not_prose"] > 0
+        assert texto == tabela
+
+    def test_listagem_de_dez_linhas_e_barrada(self) -> None:
+        """`ls | head` já tem amostra suficiente para ser julgado."""
+        listagem = "\n".join(
+            [
+                "accountsservice", "aclocal", "alsa", "applications",
+                "backgrounds", "bash-completion", "binfmts", "ca-certificates",
+                "dbus-1", "dict", "doc", "fonts",
+            ]
+        )
+        _, counters = translate_document(
+            listagem, FakeTranslator(), None, model="m", beam=1
+        )
+        assert counters["not_prose"] > 0

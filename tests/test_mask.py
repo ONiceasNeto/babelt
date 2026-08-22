@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from manbr.mask import CLOSE, EXTENSIONS, OPEN, mask, restore
+from babelt.mask import CLOSE, EXTENSIONS, OPEN, mask, restore
 
 CORPUS_DIR = Path(__file__).parent / "corpus"
 
@@ -417,12 +417,21 @@ class TestEnderecosIP:
             "2012-10-30 18:17:16",
             "aa:bb:cc:dd:ee:ff",
             "versão 1.2.3",
-            "U:53,111,T:21-25,80",
             "das 9:00 às 18:00",
         ],
     )
     def test_nao_e_ip(self, text: str) -> None:
         assert mask(text).tokens == {}
+
+    def test_lista_de_portas_e_mascarada_inteira(self) -> None:
+        """`U:53,111,T:21-25,80` não é IP — é lista, e vira um token só.
+
+        Até a fase 5 este caso passava intacto, e o teste vivia aqui para
+        garantir que o padrão de IP não o pegasse. Ele continua não pegando;
+        quem pega agora é o padrão de lista da fase 6, e pega inteiro.
+        """
+        text = "U:53,111,T:21-25,80"
+        assert masked_tokens(text) == [text]
 
 
 class TestVariaveisEspeciais:

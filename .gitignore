@@ -3,6 +3,7 @@ build/
 dist/
 *.spec.bak
 *.egg-info/
+.eggs/
 
 # Bytecode Python
 __pycache__/
@@ -17,7 +18,7 @@ models/
 *.bin
 *.spm
 
-# Cache do manbr
+# Cache do babelt
 .cache/
 cache/
 
@@ -25,8 +26,10 @@ cache/
 .env
 *.key
 
-# Testes e cobertura
+# Testes, tipagem e cobertura
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 

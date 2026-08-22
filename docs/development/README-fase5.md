@@ -1,4 +1,4 @@
-# manbr — Fase 5: saída de `--help` e segmentação por colunas
+# babelt — Fase 5: saída de `--help` e segmentação por colunas
 
 ```
 PYTHONPATH=. .venv/bin/pytest                          # 1348 testes
@@ -159,9 +159,9 @@ virou literal — prosa pura que deixaria de ser traduzida. A profundidade agora
 ## Parte C — modo `--help`
 
 ```
-manbr <cmd>              man <cmd>
-manbr --help-of <cmd>    <cmd> --help, depois -h, depois --usage
-manbr --auto <cmd>       man; cai para --help só em "No manual entry"
+babelt <cmd>              man <cmd>
+babelt --help-of <cmd>    <cmd> --help, depois -h, depois --usage
+babelt --auto <cmd>       man; cai para --help só em "No manual entry"
 ```
 
 `--help-of` **executa o binário**, e isso está dito no README. A superfície de
@@ -232,7 +232,7 @@ tradução: ao ver "sem cabeça" não tem como saber qual das duas gerou, e
 devolver sempre `headless` inverteria o sentido de metade das ocorrências. É o
 mesmo teste que reprovou `núcleo → kernel` na fase 3.
 
-O que resolve é mascarar na origem, e é o que foi feito: `manbr/literals.txt`,
+O que resolve é mascarar na origem, e é o que foi feito: `babelt/literals.txt`,
 uma lista de termos que nunca chegam ao modelo. A diferença de classe está
 escrita no arquivo — glossário é para o termo que o modelo traduz **bem, mas
 de forma indesejada** (reversível); a lista é para o termo cuja tradução

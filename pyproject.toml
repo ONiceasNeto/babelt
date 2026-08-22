@@ -3,8 +3,8 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "manbr"
-version = "0.2.0"
+name = "babelt"
+version = "0.5.0"
 description = "Traduz man pages e saída de terminal do inglês para pt-BR, offline"
 readme = "README.md"
 license = "MIT"
@@ -28,31 +28,36 @@ classifiers = [
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
+# Só o que roda uma tradução. O modelo vem pronto, por download direto: nem
+# huggingface-hub nem torch são necessários para usar o babelt.
 dependencies = [
     "ctranslate2>=4.0,<5",
     "sentencepiece>=0.2,<0.3",
-    "huggingface-hub>=0.20",
 ]
 
+# Tiradas do remote `origin` deste repositório. Se o projeto for renomeado ou
+# mudar de dono antes de publicar, estas três linhas mudam junto — e o
+# MODEL_URL em babelt/model.py também.
 [project.urls]
-Homepage = "https://github.com/manbr/manbr"
-Changelog = "https://github.com/manbr/manbr/blob/main/CHANGELOG.md"
-Issues = "https://github.com/manbr/manbr/issues"
+Homepage = "https://github.com/ONiceasNeto/babelt"
+Changelog = "https://github.com/ONiceasNeto/babelt/blob/main/CHANGELOG.md"
+Issues = "https://github.com/ONiceasNeto/babelt/issues"
 
 [project.scripts]
-manbr = "manbr.__main__:main"
+babelt = "babelt.__main__:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "mypy>=1.8"]
-# Só para baixar e converter o modelo. Não é preciso em tempo de execução.
-convert = ["transformers>=4.40", "torch>=2.0"]
+# Só para gerar o artefato do modelo, com scripts/build-model.sh. Quem instala
+# o babelt para usar nunca precisa disto.
+convert = ["transformers>=4.40", "torch>=2.0", "huggingface-hub>=0.20"]
 build = ["pyinstaller>=6.0"]
 
 [tool.setuptools.packages.find]
-include = ["manbr*"]
+include = ["babelt*"]
 
 [tool.setuptools.package-data]
-manbr = ["extensions.txt", "headers.txt", "glossary.txt", "literals.txt", "py.typed"]
+babelt = ["extensions.txt", "headers.txt", "glossary.txt", "literals.txt", "function_words.txt", "py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -65,10 +70,10 @@ markers = [
 # stubs do numpy, que usam sintaxe de 3.12 e não são analisáveis com
 # python_version = 3.11. O piso de execução continua sendo 3.11
 # (requires-python), e o pacote em si é verificado nesse piso com:
-#     mypy --python-version 3.11 manbr
+#     mypy --python-version 3.11 babelt
 python_version = "3.12"
 strict = true
-files = ["manbr", "tests"]
+files = ["babelt", "tests"]
 
 # Nem ctranslate2 nem sentencepiece publicam stubs; numpy publica, mas os dele
 # usam sintaxe de 3.12 e o projeto declara 3.11 como piso.

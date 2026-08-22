@@ -1,0 +1,28 @@
+# Palavras funcionais do inglês: artigo, preposição, conjunção, auxiliar,
+# pronome, determinante. Uma por linha; # começa comentário.
+#
+# Servem para uma medida só, e ela decide se a entrada é prosa inglesa. Prosa
+# é feita de gramática — em man page, 30 a 47% das palavras estão nesta lista.
+# `ls`, `ps aux` e `df -h` são feitos de nomes: 0 a 9,5%. Ver README-fase6.md.
+#
+# A lista é deliberadamente pequena e conservadora. Acrescentar substantivo
+# comum ("file", "output") aumentaria a densidade de tudo e aproximaria as
+# duas populações — o contrário do que se quer.
+#
+# Pronome de primeira pessoa ficou de fora por medição: `i` casava 20 vezes em
+# `ps aux`, onde é a letra da coluna STAT (idle), e sozinho levava a densidade
+# do arquivo de 0,000 para 0,161 — o bastante para a listagem passar por
+# prosa. Documentação técnica não usa primeira pessoa, então o custo é zero.
+
+a an the
+of to in for with on at by from as into over under through about against
+is are was were be been being am
+do does did done
+has have had having
+will would can could may might must shall should
+and or but nor if then than that this these those it its
+not no so such
+when where which who whom while after before between during until since
+each other some any all both more most only same too very
+you your they their them
+there here what how why

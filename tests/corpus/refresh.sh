@@ -24,7 +24,7 @@ PAGES=(
 
 # Quantas linhas guardar por página. O suficiente para pegar SYNOPSIS,
 # DESCRIPTION e uma boa parte das OPTIONS.
-LINES=${MANBR_CORPUS_LINES:-160}
+LINES=${BABELT_CORPUS_LINES:-160}
 
 want=("$@")
 

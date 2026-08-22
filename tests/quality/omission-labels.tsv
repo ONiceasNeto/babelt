@@ -1,0 +1,72 @@
+# Rotulagem manual da cauda de cobertura de conteúdo (fase 6).
+# Formato: hash<TAB>razão<TAB>rótulo<TAB>origem (truncada, só para leitura)
+#
+# O hash é sha256 dos primeiros 12 dígitos do texto de origem do segmento.
+# A razão é palavras da tradução / palavras da origem, medidas sobre o texto
+# mascarado.
+#
+# ROTULAGEM
+# omissao  : algo do original não está na tradução — quase sempre a primeira
+#            palavra, e quase sempre um identificador (sync, fsync, ucase,
+#            mroute, curl, journalctl, LAST, FILE).
+# legitima : o português diz a mesma coisa com menos palavras. "do not follow"
+#            -> "não siga", "lower case" -> "minúscula", "Don't" -> "Não".
+#
+# Foram rotulados os 55 segmentos aceitos com razão abaixo de 0,90, nos dois
+# corpora de prosa. Serve para medir o custo e o ganho de qualquer limiar; ver
+# tests/quality/measure_omission.py e README-fase6.md.
+554b175aa382	0.67	omissao	tfidf/bm25 min score 0-1 (default 0.85) (default "0.85")
+f109532260d8	0.71	legitima	ucase change lower case to upper case
+097887356f71	0.75	omissao	show string "fastopen" if the fastopen option is set
+25fa9b8525a6	0.75	legitima	do not follow symlinks
+2f8d2f2ed384	0.75	omissao	enable headless hybrid crawling (experimental)
+4575da84f1d8	0.75	legitima	run diagnostic check up
+89c936a677cd	0.75	omissao	ps ax ps axu
+9b6dbaf80b6c	0.75	legitima	- Only search for files:
+cb46f60da7d8	0.75	omissao	curl - transfer a URL
+4bc91166674d	0.78	legitima	A numeric mode is from one to four octal digits (0-7), derived by addi
+14aac02553ec	0.80	omissao	start headless chrome with additional options
+3cd2c5fc5d1a	0.80	legitima	an uuid of the socket
+3e0bc2ec8811	0.80	omissao	Send User-Agent <name> to server
+60ac46309ad6	0.80	legitima	Don’t print empty devices.
+74bd0d42985a	0.80	omissao	fail to operate recursively on '/'
+781c24040600	0.80	omissao	mroute - multicast routing cache entry.
+aa8c46118b47	0.80	omissao	o exclude and exclude-from options similar to GNU tar
+ed8a342068f6	0.80	legitima	Log out from a registry
+f0a06b0dca43	0.80	omissao	start headless chrome without incognito mode
+383ce94cc7ce	0.82	omissao	FILE Read or write local files. curl does not support accessing
+0cbfd1ac6af5	0.83	omissao	list sinks of the output device
+16dd4e63d2d7	0.83	omissao	show string "ecnseen" if the saw ecn flag is found in received packets
+2d5f01435191	0.83	legitima	do not treat '/' specially (the default)
+369a6dc31980	0.83	omissao	fsync likewise, but also write metadata
+520eed4ababd	0.83	legitima	how many times the retransmission occurred
+6f9e8b8e8df3	0.83	omissao	sync likewise, but also for metadata
+f3d91d55f600	0.83	legitima	unknown: none of the above timers
+4f9cce4d5b77	0.84	legitima	agent such as ssh-agent(1). This can also be specified on a per-host b
+829bb166b3fc	0.85	legitima	the number of packets dropped before they are de-multiplexed into the 
+074ae947304a	0.86	legitima	ioam - manage IOAM namespaces and IOAM schemas.
+13a288f2f8c8	0.86	omissao	Output results in JavaScript Object Notation (JSON).
+404117f8ec04	0.86	omissao	request delay between each request in seconds
+52e9c337804b	0.86	legitima	For example, to search for the literal -foo:
+8ac90e87effa	0.86	legitima	This is free software: you are free to change and redistribute it. The
+8ac90e87effa	0.86	legitima	This is free software: you are free to change and redistribute it. The
+976c05ec6071	0.86	omissao	output a diagnostic for every file processed
+b9019f19b4b0	0.86	legitima	o does not require super-user privileges
+e7fa6a838061	0.86	legitima	how long time the timer will expire
+3e6870d6a91d	0.88	omissao	set maximum size of a single allocated block
+412d53f4e914	0.88	omissao	set display horizontal flip for stream(s) (overrides any display rotat
+4f74f091bca1	0.88	legitima	Fail fast with no output on HTTP errors
+754fd9cc7cec	0.88	omissao	LAST shows the last time the timer ran.
+7f6866d88be5	0.88	omissao	journalctl - Print log entries from the systemd journal
+8953ff8318e7	0.88	legitima	may be discontinued in a future release. It is normally implied by the
+9d83143f2be9	0.88	legitima	The standard form of the mount command is:
+c1c828ca787f	0.88	omissao	for ( opt_expr ; opt_expr ; opt_expr ) statement
+cd69563dafe0	0.88	legitima	ps - report a snapshot of the current processes.
+e52a0a930d6b	0.88	legitima	Some of the additional features of rsync are:
+f3fa41959802	0.88	legitima	should give you access to the complete manual.
+f6ac9150a6c8	0.88	legitima	DICT Lets you lookup words using online dictionaries.
+45cfddde289c	0.89	legitima	add the script to the commands to be executed
+8ddd06995a5b	0.89	legitima	read up to BYTES bytes at a time (default: 512)
+8e9a5495ce77	0.89	legitima	o support for anonymous or authenticated rsync daemons (ideal
+a1dfb1e43570	0.89	legitima	Print the version of the ip utility and exit.
+793baf28b013	0.90	legitima	A firewall rule specifies criteria for a packet and a target. If the p

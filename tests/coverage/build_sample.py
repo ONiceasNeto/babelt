@@ -4,7 +4,7 @@ A amostra é escrita em ``sample.tsv`` com o texto embutido, não só o número
 da linha, para que ``annotated.tsv`` continue válido depois de um
 ``refresh.sh`` mexer no corpus.
 
-O critério de seleção é de propósito independente de :func:`manbr.mask.mask`:
+O critério de seleção é de propósito independente de :func:`babelt.mask.mask`:
 selecionar "as linhas onde mask encontrou algo" tornaria o recall 100% por
 construção. Aqui a heurística é a presença de caracteres de sintaxe, e as
 linhas são pegas espaçadas ao longo do arquivo (não as "melhores"), para

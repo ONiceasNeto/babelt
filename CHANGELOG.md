@@ -3,14 +3,84 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 Versionamento semântico.
 
+## [0.5.0] — 2026-08-22
+
+### Mudou
+
+- **O projeto passou a se chamar `babelt`.** `manbr` prendia o nome ao par
+  en→pt-BR, e o plano inclui outros idiomas. Mudaram o comando, o pacote, o
+  binário, `$MANBR_PAGER` (agora `$BABELT_PAGER`) e os diretórios de dados:
+  `~/.cache/babelt` e `~/.local/share/babelt`.
+- Nada é migrado do nome antigo. `babelt doctor` avisa se encontrar
+  `~/.cache/manbr` ou `~/.local/share/manbr` órfãos, com o tamanho, e sugere
+  remover — 227 MB não somem sozinhos.
+- `PIPELINE_VERSION` continua 4: o texto não mudou, só o nome.
+
+### Corrigido
+
+- `scripts/build-model.sh` chamava `python`, que não existe em Debian, Ubuntu
+  e derivados. Agora usa o interpretador do `.venv` se houver, senão
+  `python3`, e falha cedo — antes de qualquer download — quando o
+  `ct2-transformers-converter` não está instalado, com a linha exata que
+  resolve (`pip install -e '.[convert]'`, do repositório, não do PyPI).
+
+## [0.4.0] — 2026-08-22
+
+Instalar deixa de exigir 2 GB de dependência.
+
+### Adicionado
+
+- `babelt doctor`: diagnostica modelo, cache, bibliotecas nativas e `man`.
+  Sai com 1 quando algo impede traduzir, 0 quando é só aviso.
+- `scripts/build-model.sh`: converte e empacota o artefato do modelo, com
+  `meta.json` de proveniência e `NOTICE` de atribuição ao Helsinki-NLP. É para
+  quem publica, não para quem instala.
+- CI no GitHub Actions: `pytest -m "not model"` e `mypy --strict`, sem baixar
+  modelo.
+
+### Mudou
+
+- **`transformers` e `torch` saíram das dependências.** O modelo agora é
+  baixado já convertido, com verificação de SHA-256 antes de qualquer
+  extração; a conversão passou a ser feita uma vez, por quem publica.
+  `huggingface-hub` também saiu — nada em tempo de execução usa.
+- As URLs do projeto apontavam para um repositório que não existe.
+
+## [0.3.0] — 2026-08-21
+
+A entrada deixa de ser presumida como prosa.
+
+### Adicionado
+
+- Guarda de prosa: um documento cuja densidade de palavras funcionais fique
+  abaixo de 14% sai intacto, sem gastar inferência. `ls | babelt` traduzia nome
+  de arquivo e nenhuma validação via isso. O limiar e a lista de palavras
+  (`babelt/function_words.txt`) foram medidos sobre três corpora.
+- Mascaramento de lista de valores separada por vírgula: `all,robotstxt,
+  sitemapxml` saía com o primeiro item traduzido.
+- `--no-pager`, e `$BABELT_PAGER` com precedência sobre `$PAGER`.
+- Corpus de saída não-prosa em `tests/corpus/nonprose/`.
+
+### Corrigido
+
+- O pager abria para saída que cabia na tela e, ao sair, apagava o que tinha
+  mostrado. Agora só pagina o que não cabe, e o padrão é `less -RFX`.
+- Título de bloco de `--help` era agrupado com o seguinte: `Flags:` e `INPUT:`
+  saíam fundidos como `flags: INPUT:`. Viraram cabeçalho, isolados no próprio
+  segmento e traduzidos por `headers.txt`.
+
+### Mudou
+
+- `PIPELINE_VERSION` para 4: o cache da 0.2.0 se invalida sozinho.
+
 ## [0.2.0] — 2026-08-21
 
 Saída de `--help` deixa de ser um caso degenerado.
 
 ### Adicionado
 
-- `manbr --help-of <cmd>` executa `<cmd> --help` (depois `-h`, depois
-  `--usage`) e traduz; `manbr --auto <cmd>` tenta `man` e cai para a ajuda
+- `babelt --help-of <cmd>` executa `<cmd> --help` (depois `-h`, depois
+  `--usage`) e traduz; `babelt --auto <cmd>` tenta `man` e cai para a ajuda
   quando não há página. Os dois executam o binário, com timeout e sem nenhum
   argumento além do flag de ajuda.
 - Segmentação de tabela de duas colunas (`SegmentKind.COLUMNS`): a coluna
@@ -20,7 +90,7 @@ Saída de `--help` deixa de ser um caso degenerado.
 - Mascaramento de grupo isolado (`{action}`, `[flags]`), sufixo de tipo
   (`string[]`) e alternância solta (`yes|no`). Recall de 96,9% para 97,5%,
   com falso positivo em prosa ainda em 1.
-- `manbr/literals.txt`: termos que nunca vão ao modelo, porque a tradução
+- `babelt/literals.txt`: termos que nunca vão ao modelo, porque a tradução
   deles perde informação. Começa com `headless` e `non-headless`.
 - Corpus de saída de `--help` em `tests/corpus/help/`, com `refresh-help.sh`.
 
@@ -41,7 +111,7 @@ Primeira versão utilizável: traduz man pages para pt-BR sem rede.
 
 ### Adicionado
 
-- `manbr <comando>` executa `man` e traduz; `… | manbr` traduz a entrada
+- `babelt <comando>` executa `man` e traduz; `… | babelt` traduz a entrada
   padrão. Texto em stdout, tudo o mais em stderr.
 - Mascaramento de sintaxe de comando (`mask`) e validação obrigatória da
   tradução (`validate`): flags, caminhos, IPs, variáveis, URLs, expressões
@@ -55,11 +125,11 @@ Primeira versão utilizável: traduz man pages para pt-BR sem rede.
   Flags, caminhos e URLs longos nunca são partidos no fim da linha.
 - Tradução com CTranslate2 int8 sobre `Helsinki-NLP/opus-mt-tc-big-en-pt`,
   com recuperação por sentença quando o parágrafo é rejeitado.
-- Cache em disco por segmento em `~/.cache/manbr`, com escrita atômica e
+- Cache em disco por segmento em `~/.cache/babelt`, com escrita atômica e
   invalidação por versão de pipeline.
 - Tradução de cabeçalhos de seção por tabela (`headers.txt`) e glossário de
   termos técnicos (`glossary.txt`), ambos editáveis.
-- Empacotamento com PyInstaller (`manbr.spec`).
+- Empacotamento com PyInstaller (`babelt.spec`).
 
 ### Limitações conhecidas
 

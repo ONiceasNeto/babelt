@@ -17,7 +17,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Final
 
-from manbr.segment import Segment
+from babelt.segment import Segment
 
 __all__ = ["HEADERS", "apply_headers", "load_headers", "translate_header"]
 

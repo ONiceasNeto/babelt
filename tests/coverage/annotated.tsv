@@ -23,6 +23,11 @@
 # A fase 1 não tinha padrão que os pegasse, e a omissão passou; a fase 5 tem,
 # e sem esta correção eles apareceriam como falso positivo do padrão novo.
 #
+# CORREÇÃO (fase 6): a lista de campos de `ps -eo euser,ruser,suser,...` também
+# estava fora, pelo mesmo motivo — só o `-eo` tinha sido anotado. Traduzir um
+# item da lista produz um argumento inválido, e foi o que aconteceu em uso
+# real com `all,robotstxt,sitemapxml` -> `todos,robotstxt,sitemapxml`.
+#
 # CORREÇÃO (fase 1.2): três operandos chave=valor tinham escapado da anotação
 # original — var=value, name=content e %name=content — enquanto 17 outros da
 # mesma classe (conv=CONVS, time=TIME, pid=...) estavam anotados. Eram
@@ -241,3 +246,4 @@ tar.txt	15	[FILE...]
 tar.txt	26	[OPTIONS]
 tar.txt	36	[OPTIONS]
 tar.txt	36	[MEMBER...]
+ps.txt	70	euser,ruser,suser,fuser,f,comm,label

@@ -16,7 +16,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Final
 
-from manbr.mask import CLOSE, OPEN
+from babelt.mask import CLOSE, OPEN
 
 __all__ = [
     "MAX_LENGTH_RATIO",

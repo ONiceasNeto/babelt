@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from manbr.mask import CLOSE, OPEN, mask
-from manbr.validate import MAX_LENGTH_RATIO, MIN_LENGTH_RATIO, validate
+from babelt.mask import CLOSE, OPEN, mask
+from babelt.validate import MAX_LENGTH_RATIO, MIN_LENGTH_RATIO, validate
 
 
 def ph(index: int) -> str:

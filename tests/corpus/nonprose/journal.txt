@@ -1,0 +1,40 @@
+Aug 21 16:44:59 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:45:04 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:45:09 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:45:14 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:45:19 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:45:24 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:45:29 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:45:34 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:45:40 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:45:47 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:45:53 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:45:59 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:46:05 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:46:11 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:46:17 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:46:23 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: derp-11 does not know about peer [BcZwI], removing route
+Aug 21 16:48:10 niceas-Aspire-E1-471 systemd[1]: Starting fwupd-refresh.service - Refresh fwupd metadata and update motd...
+Aug 21 16:48:10 niceas-Aspire-E1-471 systemd[1]: fwupd-refresh.service: Deactivated successfully.
+Aug 21 16:48:10 niceas-Aspire-E1-471 systemd[1]: Finished fwupd-refresh.service - Refresh fwupd metadata and update motd.
+Aug 21 16:53:20 niceas-Aspire-E1-471 NetworkManager[923]: <info>  [1787342000.3035] dhcp4 (wlp9s0): state changed new lease, address=192.168.18.93
+Aug 21 16:53:20 niceas-Aspire-E1-471 systemd[1]: Starting NetworkManager-dispatcher.service - Network Manager Script Dispatcher Service...
+Aug 21 16:53:20 niceas-Aspire-E1-471 dbus-daemon[744]: [system] Activating via systemd: service name='org.freedesktop.nm_dispatcher' unit='dbus-org.freedesktop.nm-dispatcher.service' requested by ':1.8' (uid=0 pid=923 comm="/usr/sbin/NetworkManager --no-daemon" label="unconfined")
+Aug 21 16:53:20 niceas-Aspire-E1-471 systemd[1]: Started NetworkManager-dispatcher.service - Network Manager Script Dispatcher Service.
+Aug 21 16:53:20 niceas-Aspire-E1-471 dbus-daemon[744]: [system] Successfully activated service 'org.freedesktop.nm_dispatcher'
+Aug 21 16:53:30 niceas-Aspire-E1-471 systemd[1]: NetworkManager-dispatcher.service: Deactivated successfully.
+Aug 21 16:56:05 niceas-Aspire-E1-471 tailscaled[1029]: netmap: suggested exit node:  ()
+Aug 21 16:56:05 niceas-Aspire-E1-471 tailscaled[1029]: wgengine: Reconfig: [BcZwI] changed from "discokey:158837851989afee5438eeb5023f396bfb2179e752d954b0bc10a7d506181e09" to "discokey:b3624f763620b64fad0cc3d2997e1d66fbed8bd370a685bbd9ecc485a4ae0975"
+Aug 21 16:56:05 niceas-Aspire-E1-471 tailscaled[1029]: wgengine: Reconfig: configuring userspace WireGuard config (with 2 peers)
+Aug 21 16:56:06 niceas-Aspire-E1-471 tailscaled[1029]: netmap: suggested exit node:  ()
+Aug 21 16:57:37 niceas-Aspire-E1-471 sshd[3390936]: Accepted password for niceas from 100.76.32.9 port 60802 ssh2
+Aug 21 16:57:37 niceas-Aspire-E1-471 sshd[3390936]: pam_unix(sshd:session): session opened for user niceas(uid=1000) by niceas(uid=0)
+Aug 21 16:57:37 niceas-Aspire-E1-471 systemd-logind[762]: New session 235 of user niceas.
+Aug 21 16:57:37 niceas-Aspire-E1-471 systemd[1]: Started session-235.scope - Session 235 of User niceas.
+Aug 21 16:57:37 niceas-Aspire-E1-471 wireplumber[34330]: BlueZ system service is not available
+Aug 21 16:57:49 niceas-Aspire-E1-471 tailscaled[1029]: portmapper: UPnP discovery response from non-UPnP port 50770
+Aug 21 16:57:52 niceas-Aspire-E1-471 tailscaled[1029]: netcheck: DetectCaptivePortal(found=false)
+Aug 21 16:57:52 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: endpoints changed: 100.64.3.252:7538 (portmap), 179.51.154.167:34370 (stun), 179.51.154.167:27439 (stun), 179.51.154.167:41641 (stun4localport), 172.17.0.1:41641 (local), 172.18.0.1:41641 (local), 192.168.18.93:41641 (local)
+Aug 21 17:05:07 niceas-Aspire-E1-471 tailscaled[1029]: netcheck: DetectCaptivePortal(found=false)
+Aug 21 17:05:07 niceas-Aspire-E1-471 tailscaled[1029]: magicsock: endpoints changed: 100.64.3.252:7538 (portmap), 179.51.154.167:34493 (stun), 179.51.154.167:28941 (stun), 179.51.154.167:41641 (stun4localport), 172.17.0.1:41641 (local), 172.18.0.1:41641 (local), 192.168.18.93:41641 (local)
+Aug 21 17:07:52 niceas-Aspire-E1-471 tailscaled[1029]: portmapper: UPnP discovery response from non-UPnP port 34681

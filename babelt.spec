@@ -1,15 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""Empacotamento do manbr com PyInstaller.
+"""Empacotamento do babelt com PyInstaller.
 
-    pyinstaller manbr.spec
+    pyinstaller babelt.spec
 
 As tabelas editáveis (extensions.txt, headers.txt, glossary.txt,
-literals.txt) são lidas em
+literals.txt, function_words.txt) são lidas em
 tempo de execução com `Path(__file__).parent`, então precisam viajar junto e
 no mesmo lugar relativo — daí `datas`.
 
 O modelo NMT **não** é embutido: são 230 MB e licença própria. O binário o
-baixa na primeira execução, para `~/.local/share/manbr`.
+baixa na primeira execução, para `~/.local/share/babelt`.
 
 torch e transformers só existem para converter o modelo. Excluí-los tira
 centenas de MB do binário.
@@ -18,10 +18,11 @@ centenas de MB do binário.
 from PyInstaller.utils.hooks import collect_dynamic_libs
 
 datas = [
-    ("manbr/extensions.txt", "manbr"),
-    ("manbr/headers.txt", "manbr"),
-    ("manbr/glossary.txt", "manbr"),
-    ("manbr/literals.txt", "manbr"),
+    ("babelt/extensions.txt", "babelt"),
+    ("babelt/headers.txt", "babelt"),
+    ("babelt/glossary.txt", "babelt"),
+    ("babelt/literals.txt", "babelt"),
+    ("babelt/function_words.txt", "babelt"),
 ]
 
 # ctranslate2 carrega bibliotecas nativas que o analisador estático não vê.
@@ -39,7 +40,7 @@ excludes = [
 ]
 
 a = Analysis(
-    ["manbr/__main__.py"],
+    ["babelt/__main__.py"],
     pathex=["."],
     binaries=binaries,
     datas=datas,
@@ -59,7 +60,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name="manbr",
+    name="babelt",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from manbr.cache import (
+from babelt.cache import (
     CACHE_FORMAT,
     PIPELINE_VERSION,
     Cache,
@@ -25,11 +25,11 @@ def cache(tmp_path: Path) -> Cache:
 class TestLocal:
     def test_respeita_xdg_cache_home(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("XDG_CACHE_HOME", "/tmp/xdg-cache")
-        assert cache_root() == Path("/tmp/xdg-cache/manbr")
+        assert cache_root() == Path("/tmp/xdg-cache/babelt")
 
     def test_padrao_sem_xdg(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
-        assert cache_root() == Path.home() / ".cache/manbr"
+        assert cache_root() == Path.home() / ".cache/babelt"
 
 
 class TestChave:

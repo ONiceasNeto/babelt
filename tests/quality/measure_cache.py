@@ -55,10 +55,10 @@ def occupied_bytes(root: Path) -> int:
 
 
 def run_pass(pages: list[Path], cache_dir: Path, model_dir: Path, beam: int) -> PassResult:
-    from manbr.cache import Cache
-    from manbr.model import MODEL_ID
-    from manbr.translate import Translator
-    from manbr.__main__ import translate_document
+    from babelt.cache import Cache
+    from babelt.model import MODEL_ID
+    from babelt.translate import Translator
+    from babelt.__main__ import translate_document
 
     translator = Translator(model_dir, beam_size=beam)
     result = PassResult()
@@ -92,7 +92,7 @@ def main() -> int:
     parser.add_argument("--cache-dir", type=Path, default=None)
     args = parser.parse_args()
 
-    from manbr.model import is_installed, model_path
+    from babelt.model import is_installed, model_path
 
     model_dir = model_path()
     if not is_installed(model_dir):
@@ -103,7 +103,7 @@ def main() -> int:
     if args.limit:
         pages = pages[: args.limit]
 
-    cache_dir = args.cache_dir or Path("/tmp/manbr-measure-cache")
+    cache_dir = args.cache_dir or Path("/tmp/babelt-measure-cache")
     shutil.rmtree(cache_dir, ignore_errors=True)
     cache_dir.mkdir(parents=True)
 

@@ -1,9 +1,9 @@
-"""CLI do manbr.
+"""CLI do babelt.
 
 Contrato de fluxo, que é o que separa uma ferramenta de terminal de um script:
 **texto traduzido sempre em stdout, tudo o mais sempre em stderr**. Progresso,
 avisos, estatísticas e perguntas vão para stderr, para que
-``manbr ss > arquivo`` e ``man ss | manbr | grep -i porta`` funcionem.
+``babelt ss > arquivo`` e ``man ss | babelt | grep -i porta`` funcionem.
 
 Nenhum caminho de erro deixa stdout vazio. Se a tradução falhar por qualquer
 motivo, o texto original sai mesmo assim — uma man page em inglês é útil, uma
@@ -23,16 +23,18 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Final, TextIO
 
-from manbr.cache import Cache, CacheStats, PIPELINE_VERSION, cache_root, make_key
-from manbr.headers import apply_headers
-from manbr.model import MODEL_ID, download, is_installed, model_path
-from manbr.normalize import normalize
-from manbr.segment import Segment, SegmentKind, reassemble, segment
-from manbr.translate import BEAM_SIZE, TranslationOutcome, Translator
+from babelt.cache import Cache, CacheStats, PIPELINE_VERSION, cache_root, make_key
+from babelt.doctor import run as run_doctor
+from babelt.headers import apply_headers
+from babelt.model import MODEL_ID, ModelError, download, is_installed, model_path
+from babelt.normalize import normalize
+from babelt.prose import PROSE_DENSITY_FLOOR, function_word_density, is_prose
+from babelt.segment import Segment, SegmentKind, reassemble, segment
+from babelt.translate import BEAM_SIZE, TranslationOutcome, Translator
 
 __all__ = ["main"]
 
-VERSION: Final = "0.2.0"
+VERSION: Final = "0.5.0"
 
 EXIT_OK: Final = 0
 EXIT_ERROR: Final = 1
@@ -40,7 +42,16 @@ EXIT_USAGE: Final = 2
 EXIT_NOT_FOUND: Final = 127
 EXIT_INTERRUPTED: Final = 130
 
-_DEFAULT_PAGER: Final = "less -R"
+#: Pager padrão. As três letras importam e cada uma corrige um defeito visto
+#: em uso real (fase 6):
+#:
+#: ``-R``  deixa passar cor;
+#: ``-F``  sai sozinho se o texto couber numa tela — sem isso, `katana --help`
+#:         com 30 linhas exigia apertar `q`;
+#: ``-X``  não usa a tela alternativa — sem isso o `less` limpava a tela ao
+#:         sair e o usuário via a saída sumir, o que parece a ferramenta não
+#:         ter feito nada. É pior que paginar de mais.
+_DEFAULT_PAGER: Final = "less -RFX"
 
 #: Segundos para um `<comando> --help` responder. Ajuda que não sai nesse
 #: tempo não é ajuda: é um programa que entrou em execução de verdade.
@@ -54,22 +65,28 @@ _MIN_WIDTH: Final = 40
 
 
 def warn(message: str) -> None:
-    print(f"manbr: {message}", file=sys.stderr)
+    print(f"babelt: {message}", file=sys.stderr)
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="manbr",
+        prog="babelt",
         description="Traduz saída de terminal em inglês para pt-BR, offline.",
         epilog=(
             "exemplos:\n"
-            "  manbr ss                 executa `man ss` e traduz\n"
-            "  man ss | manbr           traduz stdin\n"
-            "  nmap --help | manbr      traduz stdin\n"
+            "  babelt ss                 executa `man ss` e traduz\n"
+            "  man ss | babelt           traduz stdin\n"
+            "  nmap --help | babelt      traduz stdin\n"
+            "  babelt --help-of katana   executa `katana --help` e traduz\n"
+            "  babelt doctor             diagnostica a instalação\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("command", nargs="?", help="comando cuja ajuda traduzir")
+    parser.add_argument(
+        "command",
+        nargs="?",
+        help="comando cuja ajuda traduzir, ou `doctor` para diagnosticar",
+    )
     origem = parser.add_mutually_exclusive_group()
     origem.add_argument(
         "--help-of",
@@ -91,9 +108,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--stats", action="store_true", help="estatísticas em stderr ao final"
     )
     parser.add_argument(
+        "--no-pager", action="store_true", help="nunca pagina, mesmo em terminal"
+    )
+    parser.add_argument(
         "--model-path", type=Path, metavar="P", help="diretório do modelo"
     )
-    parser.add_argument("--version", action="version", version=f"manbr {VERSION}")
+    parser.add_argument("--version", action="version", version=f"babelt {VERSION}")
     return parser
 
 
@@ -211,7 +231,7 @@ class Progress:
         filled = int(width * self._done / self._total)
         bar = "#" * filled + "." * (width - filled)
         self._stream.write(
-            f"\rmanbr: traduzindo [{bar}] {self._done}/{self._total}"
+            f"\rbabelt: traduzindo [{bar}] {self._done}/{self._total}"
         )
         self._stream.flush()
 
@@ -241,6 +261,29 @@ def translate_document(
     outcomes: list[TranslationOutcome | None] = [None] * len(segments)
     pending: list[int] = []
     counters = {"cache_hits": 0, "translated": 0, "english": 0, "literal": 0}
+
+    # Guarda de prosa, antes de qualquer inferência: `ls | babelt` traduzia
+    # nome de diretório, e nenhuma validação via isso. A decisão é do
+    # documento inteiro, não do segmento — ver babelt/prose.py.
+    translatable = [
+        item.text
+        for item in segments
+        if item.kind is not SegmentKind.LITERAL and item.text.strip()
+    ]
+    if not is_prose(translatable):
+        density, words = function_word_density(translatable)
+        warn(
+            f"a entrada não parece prosa em inglês "
+            f"({density:.1%} de palavras funcionais em {words}, "
+            f"mínimo {PROSE_DENSITY_FLOOR:.0%}); saindo intacta"
+        )
+        counters["not_prose"] = len(translatable)
+        # Devolve o texto **de entrada**, e não o normalizado e requebrado:
+        # `normalize` colapsa espaço de justificação e `rewrap` reflui
+        # parágrafo, e as duas coisas destroem o alinhamento de `ps aux` e
+        # juntam as 60 linhas de um `ls` num bloco corrido. Intacto quer dizer
+        # intacto — o pipeline inteiro é para prosa, e esta não é.
+        return text, counters
 
     for index, item in enumerate(segments):
         if item.kind is SegmentKind.LITERAL or not item.text.strip():
@@ -302,14 +345,42 @@ def _decode(stored: str, fallback: str) -> TranslationOutcome:
         return TranslationOutcome(fallback, False, "cache inválido")
 
 
-def emit(text: str) -> None:
-    """Escreve em stdout, paginando se for terminal."""
-    if not sys.stdout.isatty():
+def terminal_height() -> int:
+    """Linhas do terminal, ou 24 quando não dá para saber."""
+    try:
+        return shutil.get_terminal_size().lines
+    except (OSError, ValueError):  # pragma: no cover - depende do terminal
+        return 24
+
+
+def choose_pager() -> str:
+    """``$BABELT_PAGER``, depois ``$PAGER``, depois ``less -RFX``.
+
+    A variável própria existe porque `$PAGER` costuma estar apontando para um
+    pager configurado para outra coisa — `less` sem `-R`, ou `more` — e o
+    usuário não deveria ter de escolher entre o pager dele e a saída do babelt.
+    """
+    for name in ("BABELT_PAGER", "PAGER"):
+        value = os.environ.get(name, "").strip()
+        if value:
+            return value
+    return _DEFAULT_PAGER
+
+
+def emit(text: str, *, paginate: bool = True) -> None:
+    """Escreve em stdout, paginando quando vale a pena.
+
+    Paginar é para texto que não cabe na tela. Uma ajuda de 30 linhas num
+    terminal de 50 não precisa de pager, e obrigar a apertar `q` para voltar
+    ao shell é ruído — foi o primeiro dos dois defeitos da fase 6.
+    """
+    lines = text.count("\n") + 1
+    if not paginate or not sys.stdout.isatty() or lines <= terminal_height() - 1:
         sys.stdout.write(text)
         sys.stdout.flush()
         return
 
-    pager = os.environ.get("PAGER", _DEFAULT_PAGER)
+    pager = choose_pager()
     try:
         process = subprocess.Popen(pager, shell=True, stdin=subprocess.PIPE, text=True)
     except OSError:
@@ -330,22 +401,31 @@ def ensure_model(directory: Path) -> bool:
         return True
     if not sys.stdin.isatty() or not sys.stderr.isatty():
         warn(f"modelo não instalado em {directory}")
-        warn("rode `manbr` num terminal para baixar, ou veja o README")
+        warn("rode `babelt` num terminal para baixar, ou veja o README")
         return False
-    warn(f"o modelo {MODEL_ID} ainda não foi baixado (~230 MB depois de convertido)")
+    warn(f"o modelo {MODEL_ID} ainda não foi baixado (~230 MB)")
     try:
-        answer = input("manbr: baixar agora? [s/N] ")
+        answer = input("babelt: baixar agora? [s/N] ")
     except (EOFError, KeyboardInterrupt):
         print(file=sys.stderr)
         return False
     if answer.strip().lower() not in {"s", "sim", "y", "yes"}:
         warn("seguindo sem traduzir")
         return False
-    download(progress=True)
+    try:
+        download(progress=True)
+    except ModelError as error:
+        # Falha de rede, hash divergente ou build sem URL publicada. Nenhuma
+        # delas justifica um traceback: o programa ainda tem o que fazer, que
+        # é imprimir o texto original.
+        warn(str(error))
+        return False
     return is_installed(directory)
 
 
 def report(counters: dict[str, int], cache_stats: CacheStats | None) -> None:
+    if counters.get("not_prose"):
+        warn(f"{counters['not_prose']} segmentos passaram intactos: não é prosa")
     prose = counters["translated"] + counters["english"]
     warn(f"segmentos: {prose} de prosa, {counters['literal']} literais")
     if prose:
@@ -390,6 +470,12 @@ def main(argv: list[str] | None = None) -> int:
     if (args.help_of or args.auto) and not args.command:
         parser.error("--help-of e --auto precisam de um comando")
 
+    # `doctor` é subcomando e não flag porque não modifica uma tradução: ele
+    # substitui a execução inteira. Fica antes de qualquer leitura de entrada
+    # — diagnosticar uma instalação quebrada não pode depender dela funcionar.
+    if args.command == "doctor" and not (args.help_of or args.auto):
+        return run_doctor(VERSION, args.model_path)
+
     # ---- entrada ---------------------------------------------------------
     if args.command:
         try:
@@ -412,7 +498,7 @@ def main(argv: list[str] | None = None) -> int:
     directory = args.model_path or model_path()
     if not ensure_model(directory):
         # Degradar para o original é melhor que não imprimir nada.
-        emit(normalize(source))
+        emit(normalize(source), paginate=not args.no_pager)
         return EXIT_ERROR
 
     cache = (
@@ -435,10 +521,12 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_INTERRUPTED
     except Exception as error:  # noqa: BLE001 - degradar é o contrato
         warn(f"falha ao traduzir ({error}); devolvendo o texto original")
-        emit(normalize(source))
+        emit(normalize(source), paginate=not args.no_pager)
         return EXIT_ERROR
 
-    emit(text)
+    # Ajuda de comando é curta e o usuário costuma querer o resultado na tela,
+    # junto do que já estava lá. Man page é longa e pede pager.
+    emit(text, paginate=not (args.no_pager or args.help_of or args.auto))
     if args.stats:
         report(counters, cache.stats() if cache else None)
     return EXIT_OK

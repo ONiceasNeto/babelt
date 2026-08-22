@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from manbr.headers import HEADERS, apply_headers, load_headers, translate_header
-from manbr.normalize import normalize
-from manbr.segment import Segment, SegmentKind, reassemble, segment
+from babelt.headers import HEADERS, apply_headers, load_headers, translate_header
+from babelt.normalize import normalize
+from babelt.segment import Segment, SegmentKind, reassemble, segment
 
 CORPUS_DIR = Path(__file__).parent / "corpus"
 

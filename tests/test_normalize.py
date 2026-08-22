@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from manbr.normalize import (
+from babelt.normalize import (
     MAX_JUSTIFICATION_RUN,
     SOFT_HYPHEN,
     expand_tabs,

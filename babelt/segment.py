@@ -36,7 +36,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Final
 
-from manbr.mask import CLOSE, OPEN, mask
+from babelt.mask import CLOSE, OPEN, mask
 
 __all__ = [
     "COLUMN_GAP",
@@ -73,6 +73,14 @@ COLUMN_GAP: Final = 2
 MIN_COLUMN_ROWS: Final = 3
 
 _SECTION_HEADER_RE: Final = re.compile(r"^[A-Z][A-Z0-9 ]*$")
+
+#: Título de bloco de `--help`: `Flags:`, `INPUT:`, `Common Commands:`. Faz o
+#: papel do cabeçalho de seção de man page e é tratado como um.
+#:
+#: O teto de seis palavras e a classe restrita de caracteres — sem vírgula,
+#: sem ponto — são o que separa título de frase terminada em dois-pontos.
+#: Medido: casa os 39 títulos dos dois corpora e nenhuma linha de prosa.
+_BLOCK_TITLE_RE: Final = re.compile(r"[A-Za-z][\w&/-]*(?: [\w&/-]+){0,5}:")
 
 #: Primeiro intervalo de dois ou mais espaços depois de conteúdo: a fronteira
 #: entre as colunas. Não-guloso de propósito — o que interessa é a primeira
@@ -145,7 +153,7 @@ def _masked_spans(text: str) -> list[tuple[int, int]]:
 
 
 def syntax_ratio(text: str) -> float:
-    """Fração dos caracteres não-brancos que :func:`manbr.mask.mask` cobre.
+    """Fração dos caracteres não-brancos que :func:`babelt.mask.mask` cobre.
 
     É a medida de "isto é sintaxe, não frase". Zero para prosa pura, perto de
     1 para uma linha de comando. Espaços saem da conta dos dois lados, senão
@@ -262,7 +270,7 @@ def _classify(
     """Decide o tipo de cada linha e quais linhas são cabeçalho de seção.
 
     Os cabeçalhos voltam à parte porque precisam ficar sozinhos num segmento:
-    é assim que `manbr.headers.apply_headers` consegue trocar DESCRIPTION por
+    é assim que `babelt.headers.apply_headers` consegue trocar DESCRIPTION por
     DESCRIÇÃO sem risco de acertar uma linha solta dentro de um bloco.
 
     O terceiro retorno são os blocos literais *como bloco* — densos, fundos,
@@ -306,9 +314,9 @@ def _classify(
             # Cabeçalho de seção só conta na coluna 0: uma linha de cabeçalho
             # de tabela ("LISTEN UNIT ACTIVATES", recuada 15) também é toda
             # maiúscula e não abre seção nenhuma.
-            header = (
-                _indent_of(line) == 0
-                and _SECTION_HEADER_RE.fullmatch(stripped) is not None
+            header = _indent_of(line) == 0 and (
+                _SECTION_HEADER_RE.fullmatch(stripped) is not None
+                or _BLOCK_TITLE_RE.fullmatch(stripped) is not None
             )
             if header:
                 section = stripped
@@ -344,7 +352,7 @@ def _classify(
 def segment(text: str) -> list[Segment]:
     """Divide ``text`` em segmentos de prosa e de bloco literal.
 
-    Espera texto já passado por :func:`manbr.normalize.normalize`. Cobre todas
+    Espera texto já passado por :func:`babelt.normalize.normalize`. Cobre todas
     as linhas, inclusive as vazias, para que :func:`reassemble` reconstrua o
     original caractere a caractere.
     """

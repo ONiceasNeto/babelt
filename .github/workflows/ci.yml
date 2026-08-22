@@ -1,0 +1,34 @@
+name: CI
+
+# O modelo tem 230 MB e licença própria: o CI **não** o baixa. Por isso a
+# suíte roda com `-m "not model"`, que é exatamente o que a marca existe para
+# permitir desde a fase 4 — os 7 testes que carregam pesos ficam de fora e os
+# outros 1385 rodam em segundos.
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+
+      - name: Testes (sem o modelo)
+        run: pytest -m "not model"
+
+      - name: Tipagem
+        run: mypy
+
+      - name: Tipagem no piso de execução
+        run: mypy --python-version 3.11 babelt
