@@ -30,6 +30,14 @@ Versionamento semântico.
 
 ### Corrigido
 
+- A guarda de `venv` do `install.sh` testava `import venv`, que é a checagem
+  errada em Debian e derivados: `venv` vem na stdlib e importa mesmo sem o
+  pacote `python3-venv`; o que falta é o `ensurepip`. A guarda não disparava,
+  `python3 -m venv` montava meio ambiente e o erro vinha do Python, já com o
+  venv quebrado no disco. Agora checa `ensurepip`, e um `venv` que falhe
+  mesmo assim é removido antes de sair.
+- A sugestão de `PATH` do instalador ia para stdout enquanto o aviso que a
+  introduz ia para stderr, e as duas apareciam deslocadas uma da outra.
 - Falha no download do modelo não desfaz mais nada: o babelt fica instalado e
   utilizável, e tenta o download de novo no primeiro uso. `ModelError` sai como
   mensagem, não como traceback, espelhando `ensure_model()`.

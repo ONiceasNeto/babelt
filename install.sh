@@ -64,11 +64,13 @@ find_python() {
 hint_path() {
     case ":$PATH:" in *":$BINDIR:"*) return 0 ;; esac
     warn "$BINDIR não está no PATH. Adicione:"
+    # A sugestão vai para stderr junto com o aviso: em stdout ela aparecia
+    # deslocada do `warn` que a introduz, porque os dois fluxos não sincronizam.
     # shellcheck disable=SC2016  # $PATH tem que sair literal na sugestão
     case "$(basename "${SHELL:-sh}")" in
-        fish) printf '\n    fish_add_path %s\n\n' "$BINDIR" ;;
-        zsh)  printf '\n    echo '\''export PATH="%s:$PATH"'\'' >> ~/.zshrc\n\n' "$BINDIR" ;;
-        *)    printf '\n    echo '\''export PATH="%s:$PATH"'\'' >> ~/.bashrc\n\n' "$BINDIR" ;;
+        fish) printf '\n    fish_add_path %s\n\n' "$BINDIR" >&2 ;;
+        zsh)  printf '\n    echo '\''export PATH="%s:$PATH"'\'' >> ~/.zshrc\n\n' "$BINDIR" >&2 ;;
+        *)    printf '\n    echo '\''export PATH="%s:$PATH"'\'' >> ~/.bashrc\n\n' "$BINDIR" >&2 ;;
     esac
 }
 
@@ -92,14 +94,28 @@ PY="$(find_python)" || die "Nenhum Python >= 3.$MIN_PY encontrado no PATH.
    Procurei por: python3.13, python3.12, python3.$MIN_PY, python3."
 say "Python: $PY ($("$PY" -V 2>&1))"
 
-if ! "$PY" -c 'import venv' 2>/dev/null; then
-    die "Módulo venv ausente. No Debian/Ubuntu/Mint: sudo apt install python3-venv"
+# `import venv` é a checagem errada em Debian e derivados: o módulo `venv` vem
+# na stdlib de `python3` e importa, mas o que o pacote `python3-venv` carrega é
+# o `ensurepip`, e é ele que falta. A guarda passava, `python3 -m venv` criava
+# meio ambiente e o erro vinha do Python, já com o venv quebrado no disco.
+if ! "$PY" -c 'import ensurepip' 2>/dev/null; then
+    die "O Python encontrado não tem \`ensurepip\`, e sem ele \`venv\` não
+   consegue montar um ambiente utilizável.
+   Debian/Ubuntu/Mint: sudo apt install python3-venv
+   Fedora:             sudo dnf install python3-pip
+   Arch:               já vem com o pacote python"
 fi
 
 say "Criando ambiente em $VENV"
 mkdir -p "$PREFIX" "$BINDIR"
 rm -rf "$VENV"
-"$PY" -m venv "$VENV"
+# Um venv que falhou no meio não pode ficar no disco: a próxima execução o
+# encontraria e o `[ -x "$VENV/bin/babelt" ]` lá embaixo daria um erro que não
+# aponta para a causa.
+if ! "$PY" -m venv "$VENV"; then
+    rm -rf "$VENV"
+    die "Falha ao criar o ambiente em $VENV. O diretório parcial foi removido."
+fi
 
 say "Instalando babelt e dependências"
 "$VENV/bin/python" -m pip install --quiet --upgrade pip
