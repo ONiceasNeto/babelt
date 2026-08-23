@@ -72,6 +72,11 @@ COLUMN_GAP: Final = 2
 #: é alinhamento deliberado.
 MIN_COLUMN_ROWS: Final = 3
 
+#: Célula esquerda que é, sem ambiguidade, uma flag: `-c`, `--zero`,
+#: `-B, --ignore-backups`, `--block-size=SIZE`. Serve para reconhecer a linha
+#: de tabela que o próprio programa emitiu fora do alinhamento das outras.
+_OPTION_LEFT_RE: Final = re.compile(r"^\s*-{1,2}\w[\w-]*")
+
 _SECTION_HEADER_RE: Final = re.compile(r"^[A-Z][A-Z0-9 ]*$")
 
 #: Título de bloco de `--help`: `Flags:`, `INPUT:`, `Common Commands:`. Faz o
@@ -218,12 +223,46 @@ def _split_columns(line: str) -> tuple[str, int] | None:
     return match.group(1), match.end()
 
 
-def _detect_columns(block: _Block) -> dict[int, _Row]:
+def _document_column(blocks: list[_Block]) -> int | None:
+    """A coluna de alinhamento do documento inteiro, se houver uma.
+
+    A coluna de uma tabela de ``--help`` é propriedade do arquivo, não do
+    bloco. Medi-la por bloco parecia equivalente e não é: o ``ls --help`` do
+    coreutils 9.4 tem **linha em branco no meio da lista de opções**, o que
+    parte a tabela em blocos de duas linhas. Dois é menos que
+    :data:`MIN_COLUMN_ROWS`, o bloco deixava de ser tabela, virava prosa, e
+    duas opções distintas — `-B` e `-c` — chegavam ao modelo como um parágrafo
+    só. O modelo devolvia uma linha só e o alinhamento morria.
+
+    A evidência de que a coluna 29 é deliberada está nas outras vinte linhas
+    do mesmo arquivo, e é isso que se conta aqui. O piso continua sendo
+    :data:`MIN_COLUMN_ROWS`: o que muda é o universo em que ele é medido.
+    """
+    positions: list[int] = []
+    for block in blocks:
+        if block.blank:
+            continue
+        for line in block.lines:
+            found = _split_columns(line)
+            if found is not None:
+                positions.append(found[1])
+    if not positions:
+        return None
+    column = max(set(positions), key=positions.count)
+    return column if positions.count(column) >= MIN_COLUMN_ROWS else None
+
+
+def _detect_columns(block: _Block, document_column: int | None = None) -> dict[int, _Row]:
     """Linhas do bloco que formam uma tabela de duas colunas.
 
     Devolve mapa de número de linha para a linha lógica, vazio se o bloco não
     é tabela. A coluna vencedora é a mais frequente: um ``--help`` mistura
     títulos de seção e linhas de flag no mesmo bloco, e só as últimas contam.
+
+    ``document_column`` é a coluna já estabelecida pelo arquivo inteiro (ver
+    :func:`_document_column`). Quando ela existe e o bloco tem alguma linha
+    nela, vale — mesmo que o bloco sozinho não tivesse linhas suficientes para
+    provar a tabela.
 
     Uma linha que começa na coluna da direita, sem nada à esquerda, é
     continuação da célula anterior — é assim que uma descrição de duas linhas
@@ -241,27 +280,44 @@ def _detect_columns(block: _Block) -> dict[int, _Row]:
     if not positions:
         return {}
 
-    column = max(set(positions), key=positions.count)
-    if positions.count(column) < MIN_COLUMN_ROWS:
-        return {}
+    if document_column is not None and document_column in positions:
+        column = document_column
+    else:
+        column = max(set(positions), key=positions.count)
+        if positions.count(column) < MIN_COLUMN_ROWS:
+            return {}
 
     rows: dict[int, _Row] = {}
     current: _Row | None = None
     for offset, line in enumerate(block.lines):
         number = block.start + offset
         found = _split_columns(line)
-        if found is not None and found[1] == column:
-            current = _Row([number], found[0], column, line[column:])
+        if found is not None and (found[1] == column or _stray_row(found[0], rows)):
+            # A coluna é a da própria linha: `--help` e `--version` saem do
+            # coreutils alinhados em 20 enquanto o resto da tabela está em 29,
+            # e cada um tem de voltar para onde estava.
+            current = _Row([number], found[0], found[1], line[found[1] :])
             rows[number] = current
             continue
         # Continuação: nada à esquerda da coluna, e algo à direita.
-        if current is not None and line.strip() and _indent_of(line) >= column:
+        if current is not None and line.strip() and _indent_of(line) >= current.column:
             current.lines.append(number)
-            current.cell = f"{current.cell}\n{line[column:]}"
+            current.cell = f"{current.cell}\n{line[current.column :]}"
             rows[number] = current
             continue
         current = None
     return rows
+
+
+def _stray_row(left: str, rows: dict[int, _Row]) -> bool:
+    """Linha de tabela fora do alinhamento das outras.
+
+    Só num bloco que **já** provou ser tabela, e só quando a esquerda é uma
+    flag. As duas condições existem para não transformar prosa em tabela: um
+    parágrafo com dois espaços depois do ponto casa com a fronteira de
+    colunas, mas não começa com `-`, e não está num bloco de tabela.
+    """
+    return bool(rows) and _OPTION_LEFT_RE.match(left) is not None
 
 
 def _classify(
@@ -359,6 +415,7 @@ def segment(text: str) -> list[Segment]:
     lines = text.split("\n")
     blocks = _blocks(lines)
     kinds, headers, whole = _classify(blocks)
+    document_column = _document_column(blocks)
 
     segments: list[Segment] = []
     run: list[str] = []
@@ -389,7 +446,7 @@ def segment(text: str) -> list[Segment]:
         rows = (
             {}
             if block.blank or block.start in whole
-            else _detect_columns(block)
+            else _detect_columns(block, document_column)
         )
         rows = {
             number: row

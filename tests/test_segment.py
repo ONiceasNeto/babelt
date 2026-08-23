@@ -8,6 +8,7 @@ caso a caso, mas não é o que quebra a correção.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -436,3 +437,93 @@ class TestTituloDeBloco:
         """Como o cabeçalho de seção, só vale na coluna zero."""
         [item] = [i for i in segment("       Options:\n") if i.text.strip()]
         assert item.kind is SegmentKind.PROSE
+
+
+# --------------------------------------------------------------------------
+# Fase 9: `--help` de coreutils, os dois formatos
+# --------------------------------------------------------------------------
+
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def help_fixture(name: str) -> str:
+    return (FIXTURES / name).read_text(encoding="utf-8")
+
+
+class TestHelpDeCoreutils:
+    """`ls --help` de verdade, capturado de duas distribuições.
+
+    O coreutils 9.4 (Ubuntu 24.04) põe a flag e a descrição na mesma linha,
+    alinhadas na coluna 29 — é tabela de duas colunas. O 9.11 (Arch) põe a
+    flag numa linha e a descrição na seguinte, indentada: não é tabela, e o
+    caminho de código é outro. Os dois têm de sair certos, e é fácil consertar
+    um quebrando o outro.
+    """
+
+    def test_ubuntu_cada_opcao_e_uma_linha_logica(self) -> None:
+        """Duas opções não podem cair no mesmo segmento.
+
+        Elas caíam: o `ls --help` do 9.4 tem linha em branco *dentro* da lista
+        de opções, o que parte a tabela em blocos curtos, e um bloco com menos
+        de MIN_COLUMN_ROWS linhas de coluna deixava de ser tabela e virava
+        prosa. `-B` e `-c` viravam um parágrafo só, o modelo devolvia uma
+        linha só e o alinhamento morria.
+        """
+        rows = columns_of(help_fixture("ls_help_ubuntu2404.txt"))
+        flags = [row.left.strip() for row in rows]
+        assert "-B, --ignore-backups" in flags
+        assert "-c" in flags
+
+    def test_ubuntu_nenhum_segmento_junta_duas_opcoes(self) -> None:
+        """A forma geral do defeito, não só o par que o denunciou."""
+        text = help_fixture("ls_help_ubuntu2404.txt")
+        option = re.compile(r"^\s*(-\w|--\w)", re.MULTILINE)
+        for item in segment(text):
+            if item.kind is SegmentKind.COLUMNS:
+                continue
+            assert len(option.findall(item.text)) <= 1, item.text
+
+    def test_ubuntu_cada_linha_volta_para_a_sua_coluna(self) -> None:
+        """O arquivo tem três alinhamentos, e nenhum é erro.
+
+        A lista de opções está em 29; `--help` e `--version` saem do coreutils
+        em 20; a tabela de status de saída está em 4. Forçar todas para a
+        coluna dominante desalinharia as duas últimas.
+        """
+        columns = {
+            row.left.strip(): row.column
+            for row in columns_of(help_fixture("ls_help_ubuntu2404.txt"))
+        }
+        assert columns["-B, --ignore-backups"] == 29
+        assert columns["-c"] == 29
+        assert columns["--help"] == 20
+        assert columns["--version"] == 20
+        assert columns["0"] == 4
+
+    def test_ubuntu_celula_de_varias_linhas_continua_inteira(self) -> None:
+        """A descrição de `-c` ocupa quatro linhas e é uma frase só."""
+        rows = columns_of(help_fixture("ls_help_ubuntu2404.txt"))
+        cell = next(row for row in rows if row.left.strip() == "-c")
+        assert cell.text.startswith("with -lt: sort by, and show, ctime")
+        assert "otherwise: sort by ctime, newest first" in cell.text
+
+    def test_arch_lista_de_opcoes_nao_e_tabela(self) -> None:
+        """No 9.11 a descrição fica na linha de baixo: opção não é tabela.
+
+        A única tabela do arquivo é a de status de saída (`0  if OK,`), que é
+        de duas colunas mesmo. Nenhuma linha de opção pode virar uma.
+        """
+        rows = columns_of(help_fixture("ls_help_arch.txt"))
+        assert [row.left.strip() for row in rows] == ["0", "1", "2"]
+
+    def test_arch_flag_nao_vira_prosa(self) -> None:
+        """A linha da flag é literal e sai sozinha, como já saía."""
+        segs = segment(help_fixture("ls_help_arch.txt"))
+        flag = next(item for item in segs if item.text == "-B, --ignore-backups")
+        assert flag.kind is SegmentKind.LITERAL
+
+    @pytest.mark.parametrize("name", ["ls_help_ubuntu2404.txt", "ls_help_arch.txt"])
+    def test_round_trip_caractere_a_caractere(self, name: str) -> None:
+        text = help_fixture(name)
+        assert reassemble(segment(text)) == text
