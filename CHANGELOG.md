@@ -28,6 +28,11 @@ Versionamento semântico.
 
 ### Mudou
 
+- `PIPELINE_VERSION` foi para 5. A eleição da coluna sobre o documento muda a
+  segmentação de todo `--help` com linha em branco no meio da lista de opções,
+  e o motivo de rejeição guardado mudou de formato — sem o bump, `--stats`
+  contaria motivo velho de cache junto com motivo novo, que foi exatamente o
+  que aconteceu ao medir `ls` pela primeira vez.
 - A segunda tentativa de tradução, frase a frase, resumia a falha em
   `N de M sentenças rejeitadas` e descartava o veredito do validador. O motivo
   da primeira frase rejeitada passa a viajar junto; sem ele a medição por

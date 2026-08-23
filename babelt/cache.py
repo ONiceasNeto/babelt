@@ -41,6 +41,11 @@ __all__ = [
 #: `normalize` ou `validate`**: entra na chave, então um bump invalida tudo
 #: sozinho, sem apagar nada e sem migração.
 #:
+#: 5 — fase 9: a coluna de tabela de `segment` passou a ser eleita sobre o
+#:     documento, e não sobre o bloco, o que muda a segmentação de todo
+#:     `--help` com linha em branco no meio da lista de opções. Junto, o
+#:     motivo de rejeição guardado passou a carregar a causa, e sem o bump
+#:     `--stats` misturaria o formato velho com o novo.
 #: 4 — fase 6: mask reconhece lista separada por vírgula; título de bloco de
 #:     --help virou cabeçalho, isolado no próprio segmento.
 #: 3 — fase 5: mask reconhece grupo isolado ({action}, [flags]), sufixo de
@@ -48,7 +53,7 @@ __all__ = [
 #:     colunas e a profundidade de bloco deixou de contar o cabeçalho.
 #: 2 — fase 4: a seção SYNOPSIS passou a ser classificada como bloco literal.
 #: 1 — fases 1 a 3.1.
-PIPELINE_VERSION: Final = 4
+PIPELINE_VERSION: Final = 5
 
 #: Versão do formato em disco. Muda se o layout dos arquivos mudar.
 CACHE_FORMAT: Final = 1
