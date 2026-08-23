@@ -46,19 +46,40 @@ por código depois.
 Requer Python 3.11+ e Linux.
 
 ```console
-$ pip install babelt
-$ babelt ss          # na primeira vez, pergunta se pode baixar o modelo
+$ git clone https://github.com/ONiceasNeto/babelt && cd babelt
+$ ./install.sh
+$ babelt ss
 ```
 
-O modelo (~230 MB, já convertido para int8) vai para
-`~/.local/share/babelt/models/en-pt`, respeitando `XDG_DATA_HOME`. Ele é
-baixado pronto, com o SHA-256 conferido antes de qualquer extração — instalar
-o babelt **não** puxa `torch` nem `transformers`.
+`install.sh` monta um venv isolado em `~/.local/share/babelt/venv`, instala o
+babelt lá dentro e liga `~/.local/bin/babelt` a ele. **Nada é instalado no
+Python do sistema e você nunca precisa ativar venv nenhum** — o symlink aponta
+para o interpretador certo. Se `~/.local/bin` não estiver no `PATH`, o
+instalador diz a linha exata para adicionar, conforme o seu shell.
+
+O modelo (~230 MB) é baixado ao final da instalação. Se o download falhar, a
+instalação **não** é desfeita: o babelt fica utilizável e tenta de novo no
+primeiro uso.
+
+| Flag | Efeito |
+| --- | --- |
+| *(nenhuma)* | Instala e baixa o modelo. |
+| `--no-model` | Instala sem baixar; o modelo vem no primeiro uso. |
+| `--uninstall` | Remove binário, venv e cache. Pergunta antes de apagar o modelo. |
+| `--help` | Resumo das opções. |
+
+Reinstalar por cima é seguro e é como se atualiza: o venv é refeito e o
+modelo já baixado é reaproveitado.
+
+O modelo vai para `~/.local/share/babelt/models/en-pt`, respeitando
+`XDG_DATA_HOME`. Ele é baixado já convertido para int8, com o SHA-256
+conferido antes de qualquer extração — instalar o babelt **não** puxa `torch`
+nem `transformers`.
 
 Quem quiser converter o modelo por conta própria, em vez de baixar o artefato:
 
 ```console
-$ pip install 'babelt[convert]'
+$ .venv/bin/pip install 'babelt[convert]'
 $ ./scripts/build-model.sh          # imprime o SHA-256 do artefato gerado
 ```
 
@@ -217,9 +238,12 @@ Blocos literais nunca chegam ao modelo.
 
 ## Desenvolvimento
 
+Para mexer no código, o caminho é o editável — não o `install.sh`, que existe
+para quem só quer usar:
+
 ```console
 $ python -m venv .venv && .venv/bin/pip install -e '.[dev,convert]'
-$ .venv/bin/pytest                              # 1392 testes
+$ .venv/bin/pytest                              # 1397 testes
 $ .venv/bin/mypy                                # strict
 $ .venv/bin/mypy --python-version 3.11 babelt    # piso de execução
 ```

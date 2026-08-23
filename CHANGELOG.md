@@ -3,6 +3,42 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 Versionamento semântico.
 
+## [Não publicado]
+
+### Adicionado
+
+- **`install.sh`: instalação em um comando.** `./install.sh` monta um venv
+  isolado em `~/.local/share/babelt/venv`, instala o babelt lá e liga
+  `~/.local/bin/babelt` a ele. Nada toca o Python do sistema e o usuário nunca
+  ativa venv — a alternativa era `pip install --user`, que quebra em distro com
+  ambiente gerenciado (PEP 668), ou pedir que o usuário mantivesse um venv
+  ativo, que é justamente o atrito que o instalador existe para tirar.
+- `--no-model` instala sem baixar os 230 MB; o modelo vem no primeiro uso.
+- `--uninstall` remove binário, venv e cache de tradução, e pergunta antes de
+  apagar o modelo — 230 MB rebaixáveis não se apagam sem confirmar. Sem
+  terminal para perguntar, mantém.
+- O instalador falha cedo e com a linha exata que resolve quando falta Python
+  >= 3.11 ou o módulo `venv`, com o comando por distro.
+
+### Mudou
+
+- README: `install.sh` passou a ser o caminho principal de instalação;
+  `pip install -e '.[dev,convert]'` ficou documentado como caminho de
+  desenvolvimento.
+- `MODEL_URL` e `MODEL_SHA256` preenchidos com o artefato de `v0.5.0`
+  publicado no GitHub Releases.
+
+### Corrigido
+
+- Falha no download do modelo não desfaz mais nada: o babelt fica instalado e
+  utilizável, e tenta o download de novo no primeiro uso. `ModelError` sai como
+  mensagem, não como traceback, espelhando `ensure_model()`.
+- `tests/test_model.py::test_sem_url_publicada_falha_com_instrucao` verificava
+  a detecção de placeholder testando o valor real das constantes, e por isso
+  passou a baixar 230 MB de verdade — numa suíte que não é marcada `model` —
+  assim que a URL foi preenchida. Agora força o placeholder com `monkeypatch`
+  e falha se algum código tentar ir à rede.
+
 ## [0.5.0] — 2026-08-22
 
 ### Mudou

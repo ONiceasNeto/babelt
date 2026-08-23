@@ -12,8 +12,9 @@
 - [x] `babelt setup`: baixar artefato já convertido em vez de converter
       localmente (fase 7 — `download()` baixa tar.gz pronto; não virou
       subcomando próprio, mora no fluxo normal da primeira execução)
-- [ ] Gerar e publicar o artefato convertido (~206 MB, GitHub Releases).
-      O script existe: `scripts/build-model.sh`
+- [x] Gerar e publicar o artefato convertido (~206 MB, GitHub Releases).
+      Publicado como asset de `v0.5.0`; responde 200 anonimamente e o
+      download foi exercitado de ponta a ponta pelo `install.sh`
 - [x] Verificação SHA-256 do download (fase 7 — conferido antes de
       qualquer extração; artefato divergente é apagado sem ser aberto)
 - [x] Mover `transformers` e `torch` de `dependencies` para
@@ -21,11 +22,14 @@
       junto)
 - [x] Licença do modelo: atribuição ao Helsinki-NLP (fase 7 — no README
       e em NOTICE dentro do artefato, gerado por build-model.sh)
-- [ ] Preencher `MODEL_URL` e `MODEL_SHA256` em `babelt/model.py` depois
-      de publicar o artefato
+- [x] Preencher `MODEL_URL` e `MODEL_SHA256` em `babelt/model.py` depois
+      de publicar o artefato (fase 9)
 
 ## Distribuição
 
+- [x] Instalação em um comando: `install.sh` com venv isolado, symlink em
+      `~/.local/bin`, `--no-model` e `--uninstall` (fase 9)
+- [ ] Renomear o repositório no GitHub e o diretório local para `babelt`
 - [ ] PKGBUILD para o AUR
 - [ ] Publicar no PyPI
 - [x] CI no GitHub Actions rodando a suíte (fase 7 — pytest sem o modelo

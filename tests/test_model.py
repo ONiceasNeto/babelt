@@ -149,11 +149,26 @@ class TestDownload:
         download(progress=False)
         assert capsys.readouterr().err == ""
 
+    @pytest.mark.parametrize("constante", ["MODEL_URL", "MODEL_SHA256"])
     def test_sem_url_publicada_falha_com_instrucao(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, constante: str
     ) -> None:
-        """Build sem artefato publicado não sai tentando baixar do nada."""
+        """Build sem artefato publicado não sai tentando baixar do nada.
+
+        O que se testa é a *detecção* do placeholder, não o valor que as
+        constantes têm hoje: uma vez publicado o artefato, elas ficam
+        preenchidas e o teste continuaria valendo. Daí o monkeypatch em
+        cima do módulo — que só funciona porque ``download`` lê as duas
+        constantes na hora da chamada.
+        """
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+        monkeypatch.setattr(babelt.model, constante, babelt.model._PLACEHOLDER)
+
+        def nao_va_a_rede(url: str) -> None:
+            raise AssertionError(f"não deveria tentar baixar nada ({url})")
+
+        monkeypatch.setattr(urllib.request, "urlopen", nao_va_a_rede)
+
         with pytest.raises(ModelError, match="build-model.sh"):
             download(progress=False)
         assert not model_path().exists()
