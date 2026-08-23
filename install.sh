@@ -53,7 +53,7 @@ uninstall() {
 }
 
 find_python() {
-    for c in python3.13 python3.12 python3.11 python3; do
+    for c in python3.14 python3.13 python3.12 python3.11 python3; do
         command -v "$c" >/dev/null 2>&1 || continue
         "$c" -c "import sys; sys.exit(0 if sys.version_info[:2] >= (3, $MIN_PY) else 1)" \
             2>/dev/null && { echo "$c"; return 0; }
@@ -91,7 +91,7 @@ PY="$(find_python)" || die "Nenhum Python >= 3.$MIN_PY encontrado no PATH.
    Debian/Ubuntu/Mint: sudo apt install python3 python3-venv
    Fedora:             sudo dnf install python3
    Arch:               sudo pacman -S python
-   Procurei por: python3.13, python3.12, python3.$MIN_PY, python3."
+   Procurei por: python3.14, python3.13, python3.12, python3.$MIN_PY, python3."
 say "Python: $PY ($("$PY" -V 2>&1))"
 
 # `import venv` é a checagem errada em Debian e derivados: o módulo `venv` vem
