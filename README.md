@@ -112,10 +112,28 @@ $ babelt ss > ss.pt.txt        # texto em stdout, limpo
 | `--auto` | tenta `man`; se não houver página, cai para `--help` |
 | `--beam N` | feixe da busca (padrão 1; 4 traduz melhor e demora ~2,5× mais) |
 | `--no-cache` | ignora o cache, na leitura e na escrita |
-| `--stats` | estatísticas em stderr ao final |
+| `--stats` | estatísticas em stderr ao final, com a taxa de rejeição por motivo |
 | `--no-pager` | nunca pagina, mesmo em terminal |
 | `--model-path P` | usa outro diretório de modelo |
 | `--version` | versão |
+
+`--stats` diz quanto ficou em inglês e **por quê**:
+
+```console
+$ babelt --stats ls
+babelt: segmentos: 76 de prosa, 134 literais
+babelt: traduzidos: 62 (81.6%); mantidos em inglês: 14 (18.4%)
+babelt: rejeitados por motivo:
+babelt:      5 (6.6%)  placeholder ausente
+babelt:      4 (5.3%)  peça fora do vocabulário (oov)
+babelt:      2 (2.6%)  razão de comprimento
+babelt:      1 (1.3%)  delimitador
+babelt: cache: 42 acertos de segmento
+```
+
+Segmento rejeitado sai em inglês, e isso é o comportamento desejado: uma
+frase mal traduzida numa página de manual é pior que uma frase em inglês.
+Os motivos são as regras de [`validate.py`](babelt/validate.py).
 
 `babelt doctor` diagnostica a instalação: modelo, cache, bibliotecas e `man`.
 

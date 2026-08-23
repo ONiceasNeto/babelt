@@ -320,9 +320,47 @@ def translate_document(
         assert settled is not None
         if item.kind is not SegmentKind.LITERAL and item.text.strip():
             counters["translated" if settled.translated else "english"] += 1
+            if not settled.translated:
+                key = f"{REASON_PREFIX}{reason_family(settled.reason)}"
+                counters[key] = counters.get(key, 0) + 1
         final.append(replace(item, text=settled.text))
 
     return reassemble(rewrap(apply_headers(final), output_width())), counters
+
+
+#: Prefixo das chaves de contagem por motivo dentro de ``counters``. Mantém
+#: tudo em ``dict[str, int]`` — um segundo dicionário só para isso atravessaria
+#: quatro assinaturas para nada.
+REASON_PREFIX: Final = "motivo:"
+
+#: Cada motivo de rejeição carrega o detalhe do caso (`placeholder 3 ausente`,
+#: `sentença repetida 2x: '...'`). Para contar, o que importa é a família.
+#: Sem isto, cada rejeição seria a sua própria categoria e o relatório teria
+#: tantas linhas quanto rejeições.
+_REASON_FAMILIES: Final = (
+    ("oov", "peça fora do vocabulário (oov)"),
+    ("não processado", "não processado"),
+    ("tradução vazia", "tradução vazia"),
+    ("placeholder malformado", "placeholder malformado"),
+    ("inesperado", "placeholder inesperado"),
+    ("ausente", "placeholder ausente"),
+    ("duplicado", "placeholder duplicado"),
+    ("razão de comprimento", "razão de comprimento"),
+    ("token desconhecido", "token desconhecido (<unk>)"),
+    ("contagem de sentenças", "contagem de sentenças"),
+    ("sentença repetida", "sentença repetida"),
+    ("delimitador", "delimitador"),
+)
+
+
+def reason_family(reason: str | None) -> str:
+    """A família de um motivo de rejeição, para contagem."""
+    if reason is None:
+        return "sem motivo registrado"
+    for needle, family in _REASON_FAMILIES:
+        if needle in reason:
+            return family
+    return "outro"
 
 
 def _encode(outcome: TranslationOutcome) -> str:
@@ -435,6 +473,17 @@ def report(counters: dict[str, int], cache_stats: CacheStats | None) -> None:
             f"mantidos em inglês: {counters['english']} "
             f"({counters['english'] / prose:.1%})"
         )
+    rejected = sorted(
+        ((key[len(REASON_PREFIX) :], count)
+         for key, count in counters.items()
+         if key.startswith(REASON_PREFIX)),
+        key=lambda pair: (-pair[1], pair[0]),
+    )
+    if rejected:
+        warn("rejeitados por motivo:")
+        for family, count in rejected:
+            share = f" ({count / prose:.1%})" if prose else ""
+            warn(f"  {count:>4}{share}  {family}")
     warn(f"cache: {counters['cache_hits']} acertos de segmento")
     if cache_stats is not None:
         warn(

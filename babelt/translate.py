@@ -384,6 +384,7 @@ class Translator:
             tokens = masked[index][1]
             pieces = list(parts)
             failures = 0
+            reasons: list[str] = []
             total = len(parts[0::2])
             for position in range(0, len(parts), 2):
                 sentence = parts[position]
@@ -401,14 +402,21 @@ class Translator:
                     pieces[position] = apply_glossary(output)
                 else:
                     failures += 1  # a frase fica em inglês
+                    if verdict.reason is not None:
+                        reasons.append(verdict.reason)
             joined = restore("".join(pieces), tokens)
+            # O motivo da primeira frase rejeitada viaja junto. Sem ele o
+            # segmento chegava ao relatório como "N de M sentenças
+            # rejeitadas", que diz quantas e não diz por quê — e medir a taxa
+            # de rejeição por motivo era impossível a partir daqui.
+            detail = f": {reasons[0]}" if reasons else ""
             outcomes[index] = TranslationOutcome(
                 text=joined,
                 translated=failures < total,
                 reason=(
                     None
                     if failures == 0
-                    else f"{failures} de {total} sentenças rejeitadas"
+                    else f"{failures} de {total} sentenças rejeitadas{detail}"
                 ),
             )
 

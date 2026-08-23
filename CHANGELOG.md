@@ -20,8 +20,18 @@ Versionamento semântico.
 - O instalador falha cedo e com a linha exata que resolve quando falta Python
   >= 3.11 ou o módulo `venv`, com o comando por distro.
 
+- **`--stats` reporta a taxa de rejeição por motivo.** Antes dizia quantos
+  segmentos ficaram em inglês, e não por quê — o que deixava "o validador está
+  rejeitando demais" no terreno da impressão. Agora agrupa por família de
+  motivo (`placeholder ausente`, `oov`, `razão de comprimento`, …) com a
+  contagem e o percentual sobre a prosa do documento.
+
 ### Mudou
 
+- A segunda tentativa de tradução, frase a frase, resumia a falha em
+  `N de M sentenças rejeitadas` e descartava o veredito do validador. O motivo
+  da primeira frase rejeitada passa a viajar junto; sem ele a medição por
+  motivo era impossível a partir do relatório. O validador não mudou.
 - README: `install.sh` passou a ser o caminho principal de instalação;
   `pip install -e '.[dev,convert]'` ficou documentado como caminho de
   desenvolvimento.

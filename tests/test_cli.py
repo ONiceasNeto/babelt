@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 
 from babelt.__main__ import (
+    REASON_PREFIX,
     EXIT_ERROR,
     EXIT_INTERRUPTED,
     EXIT_NOT_FOUND,
@@ -30,6 +31,8 @@ from babelt.__main__ import (
     main,
     output_width,
     emit,
+    reason_family,
+    report,
     read_help,
     read_source,
     rewrap,
@@ -754,3 +757,77 @@ class TestGuardaDeProsa:
             listagem, FakeTranslator(), None, model="m", beam=1
         )
         assert counters["not_prose"] > 0
+
+
+# --------------------------------------------------------------------------
+# Fase 9: taxa de rejeição por motivo
+# --------------------------------------------------------------------------
+
+
+class TestMotivoDeRejeicao:
+    """`--stats` reporta *por que* um segmento ficou em inglês, não só quantos.
+
+    A contagem por motivo só é útil se toda rejeição real cair numa família
+    conhecida. Uma família "outro" que engorda é um relatório que informa cada
+    vez menos, e o jeito de impedir isso é fixar aqui os motivos que
+    `validate.py` sabe emitir.
+    """
+
+    def test_reason_family_agrupa_o_detalhe(self) -> None:
+        """O detalhe do caso varia; a família não."""
+        assert reason_family("placeholder 3 ausente") == "placeholder ausente"
+        assert reason_family("placeholder 7 ausente") == "placeholder ausente"
+
+    @pytest.mark.parametrize(
+        "reason",
+        [
+            "tradução vazia",
+            "placeholder malformado: '\\x00 3'",
+            "placeholder 2 inesperado",
+            "placeholder 3 ausente",
+            "placeholder 1 duplicado (2 ocorrências)",
+            "razão de comprimento 0.31 fora de [0.5, 2.0]",
+            "token desconhecido na saída: '<unk>'",
+            "contagem de sentenças mudou: 3 -> 2",
+            "sentença repetida 2x: 'do not list implied entries'",
+            "delimitador '[': 2 -> 1",
+            "oov",
+            "não processado",
+        ],
+    )
+    def test_nenhum_motivo_conhecido_cai_em_outro(self, reason: str) -> None:
+        assert reason_family(reason) != "outro"
+
+    def test_motivo_de_frase_carrega_a_causa(self) -> None:
+        """A segunda tentativa é frase a frase e resumia o motivo em número.
+
+        `2 de 3 sentenças rejeitadas` diz quantas e não diz por quê, e era
+        tudo o que chegava ao relatório — o que tornava a medição por motivo
+        impossível. A causa da primeira frase rejeitada viaja junto agora.
+        """
+        assert reason_family("1 de 1 sentenças rejeitadas: placeholder 3 ausente") == (
+            "placeholder ausente"
+        )
+
+    def test_sem_motivo_registrado_tem_familia_propria(self) -> None:
+        assert reason_family(None) == "sem motivo registrado"
+
+    def test_report_lista_os_motivos(self, capsys: pytest.CaptureFixture[str]) -> None:
+        counters = {
+            "cache_hits": 0,
+            "translated": 8,
+            "english": 2,
+            "literal": 0,
+            f"{REASON_PREFIX}placeholder ausente": 2,
+        }
+        report(counters, None)
+        err = capsys.readouterr().err
+        assert "rejeitados por motivo:" in err
+        assert "placeholder ausente" in err
+
+    def test_report_cala_quando_nada_foi_rejeitado(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        counters = {"cache_hits": 0, "translated": 10, "english": 0, "literal": 0}
+        report(counters, None)
+        assert "rejeitados por motivo:" not in capsys.readouterr().err

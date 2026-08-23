@@ -197,7 +197,11 @@ class TestFluxo:
         assert outcome.translated
         assert "Leia" in outcome.text
         assert "Then use --now here." in outcome.text  # frase ruim em inglês
-        assert outcome.reason == "1 de 2 sentenças rejeitadas"
+        # O motivo carrega a causa da primeira frase rejeitada: sem ela o
+        # relatório de `--stats` sabia quantas frases caíram e não por quê.
+        assert outcome.reason is not None
+        assert outcome.reason.startswith("1 de 2 sentenças rejeitadas: ")
+        assert "placeholder" in outcome.reason
 
     def test_todas_as_sentencas_falham(self) -> None:
         translator = FakeTranslator(lambda text: "lixo")
@@ -205,7 +209,9 @@ class TestFluxo:
         (outcome,) = translator.translate_all([item])
         assert not outcome.translated
         assert outcome.text == item.text
-        assert outcome.reason == "2 de 2 sentenças rejeitadas"
+        assert outcome.reason is not None
+        assert outcome.reason.startswith("2 de 2 sentenças rejeitadas: ")
+        assert "placeholder" in outcome.reason
 
     def test_ordem_preservada_no_lote(self) -> None:
         translator = FakeTranslator(lambda text: text.upper())
