@@ -67,16 +67,48 @@ find_python() {
     return 1
 }
 
+# shellcheck disable=SC2088  # o ~ sai literal na linha que o usuário copia e
+#                             # expande quando *ele* a executa, não aqui
 hint_path() {
     case ":$PATH:" in *":$BINDIR:"*) return 0 ;; esac
     warn "$BINDIR não está no PATH. Adicione:"
+
+    # O arquivo depende do shell, e errar aqui é pior que não dizer nada: a
+    # instrução parece resolver, o usuário reabre o terminal e o comando
+    # continua sem existir.
+    #
+    # `sh` cai em ~/.profile, e não em ~/.bashrc. Não é caso de borda: um
+    # `useradd -m` sem `-s` cria a conta com /bin/sh, e no Alpine o shell do
+    # sistema inteiro é ash. Os três leem ~/.profile no login; nenhum lê
+    # ~/.bashrc.
+    #
+    # Shell desconhecido também vai para ~/.profile: é o arquivo que a maior
+    # parte dos shells POSIX lê, e o palpite é dito como palpite.
+    #
     # A sugestão vai para stderr junto com o aviso: em stdout ela aparecia
     # deslocada do `warn` que a introduz, porque os dois fluxos não sincronizam.
+    shell_name="$(basename "${SHELL:-}")"
+    case "$shell_name" in
+        fish)
+            printf '\n    fish_add_path %s\n\n' "$BINDIR" >&2
+            return 0
+            ;;
+        bash) file="~/.bashrc" ;;
+        zsh)  file="~/.zshrc" ;;
+        sh|dash|ash) file="~/.profile" ;;
+        *)    file="~/.profile" ;;
+    esac
+
     # shellcheck disable=SC2016  # $PATH tem que sair literal na sugestão
-    case "$(basename "${SHELL:-sh}")" in
-        fish) printf '\n    fish_add_path %s\n\n' "$BINDIR" >&2 ;;
-        zsh)  printf '\n    echo '\''export PATH="%s:$PATH"'\'' >> ~/.zshrc\n\n' "$BINDIR" >&2 ;;
-        *)    printf '\n    echo '\''export PATH="%s:$PATH"'\'' >> ~/.bashrc\n\n' "$BINDIR" >&2 ;;
+    printf '\n    echo '\''export PATH="%s:$PATH"'\'' >> %s\n\n' \
+        "$BINDIR" "$file" >&2
+
+    case "$shell_name" in
+        bash|zsh|sh|dash|ash) ;;
+        "")  warn "Não consegui identificar seu shell (\$SHELL está vazio);"
+             warn "~/.profile é o palpite conservador." ;;
+        *)   warn "Não conheço o shell \`$shell_name\`; ~/.profile é o palpite"
+             warn "conservador. Se ele não for lido, use o rc do seu shell." ;;
     esac
 }
 
