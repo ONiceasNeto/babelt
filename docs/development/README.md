@@ -36,6 +36,14 @@ no corpus, e várias hipóteses óbvias já foram testadas e reprovadas.
 As fases 9 e 10 não têm documento próprio: estão no
 [CHANGELOG](../../CHANGELOG.md).
 
+## Proposta em aberto
+
+- [`README-fase11.md`](README-fase11.md) — **suporte a múltiplos pares de
+  idioma.** Único documento daqui que é proposta e não registro: nada dele foi
+  implementado. Avalia um desenho contra o código de hoje, diz onde não
+  encaixa, e ordena as etapas. Enquanto não for implementado, é o que se lê
+  antes de propor qualquer coisa sobre `--lang`.
+
 ## Estudo de caso
 
 - [`caso-katana.md`](caso-katana.md) — a mesma saída de `katana --help`
