@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Como contribuir
+    url: https://github.com/ONiceasNeto/babelt/blob/main/CONTRIBUTING.md
+    about: Rodar o projeto localmente, abrir um PR, e o que o CI verifica.
+  - name: Histórico de decisões
+    url: https://github.com/ONiceasNeto/babelt/tree/main/docs/development
+    about: Por que cada regra de mascaramento e validação existe, com as medições.

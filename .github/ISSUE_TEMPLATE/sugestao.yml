@@ -1,0 +1,36 @@
+name: Sugestão
+description: Uma ideia de funcionalidade ou melhoria
+title: "[sugestão] "
+labels: ["sugestão"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideias são bem-vindas mesmo pela metade. Se você só sabe o problema e
+        não a solução, descreva o problema — isso já é a parte difícil.
+
+  - type: textarea
+    id: problema
+    attributes:
+      label: Que problema isso resolve
+      description: >
+        O que é chato ou impossível hoje. Descrever a situação real ajuda mais
+        que descrever a solução: às vezes existe um caminho melhor.
+    validations:
+      required: true
+
+  - type: textarea
+    id: ideia
+    attributes:
+      label: O que você imaginou
+      description: Como funcionaria. Sem compromisso — pode ser um esboço.
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Já tentou outro jeito?
+      description: O que você faz hoje para contornar, se faz alguma coisa.
+    validations:
+      required: false

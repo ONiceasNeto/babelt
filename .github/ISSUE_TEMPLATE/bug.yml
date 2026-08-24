@@ -1,0 +1,70 @@
+name: Bug
+description: O babelt travou, deu erro, ou fez algo que não devia
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Para tradução que saiu ruim mas o programa funcionou, use
+        **Tradução ruim** — o formulário lá pede as coisas certas.
+
+  - type: textarea
+    id: o-que-aconteceu
+    attributes:
+      label: O que aconteceu
+      description: E o que você esperava que acontecesse.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduzir
+    attributes:
+      label: Como reproduzir
+      description: Os comandos, na ordem, começando de um estado limpo se souber.
+      placeholder: |
+        1. ./install.sh --no-model
+        2. babelt ls
+        3. trava aqui
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: erro
+    attributes:
+      label: Mensagem de erro
+      description: >
+        Cole tudo o que apareceu, inclusive o traceback se houver. Não corte —
+        a parte que parece irrelevante costuma ser a que importa.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Saída de `babelt doctor`
+      description: >
+        Diagnostica modelo, cache, bibliotecas e `man`. Se o babelt não roda
+        nem isso, escreva o que aconteceu ao tentar.
+      render: text
+    validations:
+      required: false
+
+  - type: input
+    id: sistema
+    attributes:
+      label: Distro e versão do Python
+      description: A saída de `python3 --version` e o nome da sua distro.
+      placeholder: Ubuntu 24.04, Python 3.12.3
+    validations:
+      required: true
+
+  - type: input
+    id: versao
+    attributes:
+      label: Versão do babelt
+      placeholder: babelt 0.5.0
+    validations:
+      required: false
