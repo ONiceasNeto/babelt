@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 
 from babelt.__main__ import (
+    CLEAR_LINE,
     REASON_PREFIX,
     EXIT_ERROR,
     EXIT_INTERRUPTED,
@@ -583,6 +584,86 @@ class TestSerializacao:
         result = _decode("nao é json", "original")
         assert result.text == "original"
         assert not result.translated
+
+
+class _FakeTty(io.StringIO):
+    """StringIO que se diz terminal, para exercitar o caminho de tty."""
+
+    def isatty(self) -> bool:
+        return True
+
+
+class TestBarraDeProgresso:
+    """A barra tem de sumir sem deixar resíduo.
+
+    `\r` devolve o cursor ao início da linha e não apaga nada. Escrever N
+    espaços para limpar erra dos dois lados: curto demais deixa resíduo da
+    atualização anterior — foi o que emendou a barra na primeira linha do
+    documento, `[####....] 64babelt: traduzindo [########] 76` —, e longo
+    demais estoura a largura do terminal, que quebra a linha em duas e torna o
+    resíduo permanente.
+    """
+
+    def test_cada_atualizacao_limpa_ate_o_fim_da_linha(self) -> None:
+        stream = _FakeTty()
+        progress = Progress(10, stream)
+        progress.advance(1)
+        assert stream.getvalue().endswith(CLEAR_LINE)
+
+    def test_toda_escrita_comeca_no_inicio_da_linha(self) -> None:
+        """Sem o `\r`, cada atualização empilharia uma linha nova."""
+        stream = _FakeTty()
+        progress = Progress(10, stream)
+        progress.advance(1)
+        progress.advance(1)
+        assert stream.getvalue().count("\r") == 2
+
+    def test_close_limpa_a_linha(self) -> None:
+        stream = _FakeTty()
+        progress = Progress(10, stream)
+        progress.advance(5)
+        progress.close()
+        assert stream.getvalue().endswith(f"\r{CLEAR_LINE}")
+
+    def test_nao_limpa_com_espacos_de_largura_fixa(self) -> None:
+        """A correção, dita pelo nome: contar espaços é o que estava errado."""
+        stream = _FakeTty()
+        progress = Progress(10, stream)
+        progress.advance(3)
+        progress.close()
+        assert " " * 40 not in stream.getvalue()
+
+    def test_close_e_idempotente(self) -> None:
+        """Sair pelo `with` depois de um `close()` explícito não escreve lixo."""
+        stream = _FakeTty()
+        progress = Progress(10, stream)
+        progress.advance(1)
+        progress.close()
+        antes = stream.getvalue()
+        progress.close()
+        assert stream.getvalue() == antes
+
+    def test_context_manager_limpa_ao_sair(self) -> None:
+        stream = _FakeTty()
+        with Progress(10, stream) as progress:
+            progress.advance(4)
+        assert stream.getvalue().endswith(f"\r{CLEAR_LINE}")
+
+    def test_context_manager_limpa_mesmo_com_excecao(self) -> None:
+        """Ctrl-C no meio deixava a barra na tela, e o aviso emendava nela."""
+        stream = _FakeTty()
+        with pytest.raises(KeyboardInterrupt):
+            with Progress(10, stream) as progress:
+                progress.advance(2)
+                raise KeyboardInterrupt
+        assert stream.getvalue().endswith(f"\r{CLEAR_LINE}")
+
+    def test_nada_de_ansi_fora_do_terminal(self) -> None:
+        """Redirecionado para arquivo, nem barra nem sequência de escape."""
+        stream = io.StringIO()
+        with Progress(10, stream) as progress:
+            progress.advance(5)
+        assert stream.getvalue() == ""
 
 
 class TestProgresso:

@@ -65,6 +65,11 @@ _VOCABULARY: Final = ("shared_vocabulary.json", "shared_vocabulary.txt")
 #: overhead sumir e pequeno o bastante para o progresso andar visivelmente.
 _CHUNK: Final = 1024 * 1024
 
+#: Apaga do cursor até o fim da linha. Mesma razão de `CLEAR_LINE` em
+#: `__main__`: um número fixo de espaços erra dos dois lados, e o resíduo
+#: emenda na saída seguinte. Só sai quando o destino é terminal.
+_CLEAR_LINE: Final = "\x1b[K"
+
 
 class ModelError(RuntimeError):
     """Falha ao baixar, verificar ou extrair o modelo."""
@@ -168,14 +173,16 @@ def _fetch(url: str, destination: Path, progress: bool) -> None:
                     done += len(chunk)
                     if progress and sys.stderr.isatty():
                         share = f"{done / total:5.1%}" if total else f"{done // _CHUNK} MiB"
-                        sys.stderr.write(f"\rbabelt: baixando o modelo {share}")
+                        sys.stderr.write(
+                            f"\rbabelt: baixando o modelo {share}{_CLEAR_LINE}"
+                        )
                         sys.stderr.flush()
     except (urllib.error.URLError, OSError) as error:
         destination.unlink(missing_ok=True)
         raise ModelError(f"falha ao baixar {url}: {error}") from error
     finally:
         if progress and sys.stderr.isatty():
-            sys.stderr.write("\r" + " " * 48 + "\r")
+            sys.stderr.write(f"\r{_CLEAR_LINE}")
             sys.stderr.flush()
 
 

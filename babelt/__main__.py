@@ -214,6 +214,19 @@ def read_help(command: str) -> str:
     raise LookupError(f"{command} não respondeu a nenhum de {', '.join(HELP_FLAGS)}")
 
 
+#: Apaga do cursor até o fim da linha (ED/EL, `ESC [ K`). Usado no lugar de
+#: escrever N espaços: `\r` devolve o cursor ao início mas não apaga nada, e
+#: um número fixo de espaços erra dos dois lados. Curto demais e sobra
+#: resíduo da atualização anterior — foi o que emendou a barra na primeira
+#: linha do documento (`[####....] 64babelt: traduzindo [########] 76`).
+#: Longo demais e a linha estoura a largura do terminal, que a quebra em
+#: duas; a partir daí o `\r` volta para o início da segunda linha visual e o
+#: resíduo passa a ser permanente.
+#:
+#: Só é emitido quando o destino é terminal, e aí a sequência é entendida.
+CLEAR_LINE: Final = "\x1b[K"
+
+
 class Progress:
     """Contador em stderr. Silencioso quando stderr não é terminal."""
 
@@ -231,14 +244,23 @@ class Progress:
         filled = int(width * self._done / self._total)
         bar = "#" * filled + "." * (width - filled)
         self._stream.write(
-            f"\rbabelt: traduzindo [{bar}] {self._done}/{self._total}"
+            f"\rbabelt: traduzindo [{bar}] {self._done}/{self._total}{CLEAR_LINE}"
         )
         self._stream.flush()
 
     def close(self) -> None:
-        if self._enabled:
-            self._stream.write("\r" + " " * 60 + "\r")
-            self._stream.flush()
+        """Apaga a barra. Idempotente: chamar duas vezes não escreve lixo."""
+        if not self._enabled:
+            return
+        self._enabled = False
+        self._stream.write(f"\r{CLEAR_LINE}")
+        self._stream.flush()
+
+    def __enter__(self) -> "Progress":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.close()
 
 
 def translate_document(
@@ -299,21 +321,22 @@ def translate_document(
         pending.append(index)
 
     if pending:
-        progress = Progress(len(pending))
-        # Em blocos, para que um Ctrl-C no meio preserve o que já foi feito.
-        block = 16
-        for start in range(0, len(pending), block):
-            chunk = pending[start : start + block]
-            produced = translator.translate_all([segments[i] for i in chunk])
-            for index, outcome in zip(chunk, produced, strict=True):
-                outcomes[index] = outcome
-                if cache is not None:
-                    cache.put(
-                        make_key(segments[index].text, model=model, beam=beam),
-                        _encode(outcome),
-                    )
-            progress.advance(len(chunk))
-        progress.close()
+        # `with` e não `close()` no fim: um Ctrl-C no meio da tradução saía
+        # deixando a barra na tela, e a mensagem de interrompido emendava nela.
+        with Progress(len(pending)) as progress:
+            # Em blocos, para que um Ctrl-C no meio preserve o que já foi feito.
+            block = 16
+            for start in range(0, len(pending), block):
+                chunk = pending[start : start + block]
+                produced = translator.translate_all([segments[i] for i in chunk])
+                for index, outcome in zip(chunk, produced, strict=True):
+                    outcomes[index] = outcome
+                    if cache is not None:
+                        cache.put(
+                            make_key(segments[index].text, model=model, beam=beam),
+                            _encode(outcome),
+                        )
+                progress.advance(len(chunk))
 
     final: list[Segment] = []
     for item, settled in zip(segments, outcomes, strict=True):
