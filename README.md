@@ -78,15 +78,18 @@ em menos de um segundo.
 
 A barreira de entrada do terminal não é conceitual. É linguística.
 
-Quem está começando não trava porque `find` é difícil — trava porque a
-resposta para o erro está num `man` de trezentas linhas em inglês técnico.
-A documentação existe, está instalada na máquina, e é ilegível para boa parte
-de quem mais precisa dela.
+Quem está começando raramente trava porque `find` é difícil — trava porque a
+resposta está num `man` de trezentas linhas em inglês técnico. A documentação
+existe, está instalada na máquina, e é ilegível para boa parte de quem mais
+precisa dela.
 
-O babelt não simplifica nada. Traduz o que já está lá, preservando cada flag,
-cada caminho e cada exemplo intactos, e devolve o inglês original quando não
-consegue traduzir bem. A ideia é que ninguém precise escolher entre aprender
-inglês e aprender Linux.
+Isso não é um problema brasileiro. É a condição normal da maioria dos usuários
+de Linux no mundo: a documentação de sistema é escrita em inglês e permanece
+em inglês, independentemente de quem esteja lendo.
+
+O babelt não simplifica nada e não reescreve nada. Traduz o que já está lá,
+preservando cada flag, cada caminho e cada exemplo intactos, e devolve o
+inglês original quando não consegue traduzir bem.
 
 ## Como ele evita estragar sua saída
 
@@ -119,31 +122,89 @@ motivo de cada rejeição.
 
 ---
 
+## Estado e direção
+
+Hoje o babelt traduz **EN → pt-BR**. É o único par empacotado, porque é o que
+foi medido, ajustado e validado a fundo.
+
+O pipeline, porém, não sabe que existe português. `normalize`, `segment`,
+`mask` e `restore` operam sobre estrutura de texto de terminal — flags,
+caminhos, blocos literais, colunas alinhadas — e nada nesse caminho depende do
+idioma de saída. O que depende:
+
+| Componente | Depende do idioma de saída? |
+| --- | --- |
+| Segmentação, máscara e restauração | Não — leem estrutura e inglês de entrada |
+| Validação de placeholder e de corrupção | Não |
+| Contagem de sentenças e razão de comprimento | **Sim** — ver abaixo |
+| Requebra de linha na largura do terminal | Só para escrita de largura dupla (CJK) |
+| Modelo de tradução | Sim — o Helsinki-NLP publica centenas de pares |
+| Glossário, literais e tabela de cabeçalhos | Sim — arquivos de texto simples |
+| Guarda de prosa (`function_words.txt`) | Não — mede a **entrada**, que é sempre inglês |
+| Caminho do modelo e do cache | Hoje fixo em `en-pt`; precisa virar parâmetro |
+
+**Para um par latino — `en-es`, `en-fr`, `en-it` — o trabalho é sobretudo
+configuração e medição.** Converter o modelo com `scripts/build-model.sh`,
+montar glossário e tabela de cabeçalhos, tornar o par um parâmetro em vez de
+uma constante, e medir a taxa de rejeição.
+
+**Para escritas mais distantes o trabalho inclui código**, e vale ser honesto
+sobre isso. Duas regras de validação hoje assumem o formato do português:
+
+- **Contagem de sentenças** corta em `.`, `!`, `?` seguidos de espaço. Não
+  reconhece o danda do hindi (`।`), o ponto de interrogação árabe (`؟`) nem a
+  pontuação CJK (`。`), e em chinês e japonês não há espaço depois dela.
+- **Razão de comprimento** aceita a janela `[0,5; 2,5]`, calibrada para um
+  idioma que *expande*: medido em `ls`, EN → pt-BR tem mediana 1,13. Idiomas
+  que contraem cairiam sistematicamente abaixo do piso e seriam rejeitados em
+  massa.
+
+Nenhuma das duas é reescrita profunda, mas nenhuma das duas é configuração.
+
+Se você fala outro idioma e quer o terminal nele, esse é o maior espaço aberto
+do projeto. Abra uma issue dizendo qual par te interessa.
+
+---
+
 ## Contribuindo
 
-**Este projeto quer contribuidores iniciantes.** Não é frase de efeito, é o
-ponto do projeto: uma ferramenta que existe para baixar a barreira de entrada
-não pode ter uma barreira de entrada alta.
+O projeto é útil na medida em que mais gente consegue ler o próprio terminal.
+Toda contribuição que amplie isso serve, e a maior parte delas não exige
+escrever Python.
 
-Se você nunca abriu um pull request, este é um bom lugar para o primeiro.
-Issues marcadas `good first issue` são escolhidas para isso, e revisão
-mal-humorada não é aceita aqui — pergunta boba não existe.
+**Ampliar o alcance**
 
-Formas de ajudar que **não** exigem escrever Python:
+- **Um novo par de idiomas.** O maior espaço aberto. Converter o modelo,
+  montar o glossário, medir a taxa de rejeição — e, para escrita não latina,
+  ajustar as duas regras acima.
+- **Testar em outra distro.** O instalador foi validado em Ubuntu 24.04 e
+  Arch. Fedora, openSUSE, Alpine e Debian estável ainda não.
+- **Traduzir as mensagens do próprio babelt.**
 
-- **Reportar tradução ruim.** Rode `babelt <comando>`, encontre uma linha que
-  saiu esquisita, e abra uma issue com a saída. Isso é dado de qualidade e
-  vale mais que código.
-- **Testar em outra distro.** O instalador foi validado em Ubuntu e Arch.
-  Fedora, openSUSE, Alpine e Debian estável ainda não.
-- **Melhorar a documentação.** Se algo neste README te confundiu, o texto está
-  errado, não você.
-- **Traduzir mensagens do próprio babelt.**
+**Melhorar a qualidade**
 
-E se quiser mexer no código, a suíte de testes é grande de propósito — ela
-existe para você poder quebrar coisas com segurança e descobrir na hora.
+- **Reportar tradução ruim.** Rode `babelt <comando>`, ache uma linha que saiu
+  esquisita, abra uma issue com a saída e o `--stats`. Isso é dado de
+  qualidade e vale mais que código.
+- **Glossário e literais.** Termos técnicos que não devem ser traduzidos, ou
+  que têm tradução consagrada em pt-BR. São arquivos de texto — bom primeiro
+  PR.
+- **Comandos ainda não medidos.** A medição cobre `ls`, `grep`, `find`, `tar`,
+  `ssh` e `git`. Faltam muitos.
 
-Comece por [`CONTRIBUTING.md`](CONTRIBUTING.md).
+**Mexer no núcleo**
+
+Segmentação, máscara e validação têm regras que existem por um motivo
+documentado. [`docs/development/`](docs/development/) guarda a justificativa de
+cada uma — vale ler a fase correspondente antes de mudar comportamento.
+
+A suíte de testes é grande de propósito: ela existe para você poder quebrar
+coisas e descobrir na hora.
+
+**Se é seu primeiro pull request**, isso é bem-vindo aqui e não é motivo de
+constrangimento. Issues marcadas `good first issue` são escolhidas para isso.
+Comece por [`CONTRIBUTING.md`](CONTRIBUTING.md) — ele explica desde o que é um
+fork até como rodar o CI localmente.
 
 ## Instalação
 
@@ -301,8 +362,9 @@ pior documento de prosa dos corpora (`ffmpeg --help`) tem 18,1%. Ver
 
 ## Limitações conhecidas
 
-**Cerca de 14% dos segmentos de prosa saem em inglês** (101 de 724, medidos
-sobre o corpus de 20 páginas). Não é bug: é a validação funcionando. Um
+**14,6% dos segmentos de prosa saem em inglês** (275 de 1.884, medidos em
+`ls`, `grep`, `find`, `tar`, `ssh` e `git`). Não é bug: é a validação
+funcionando. Um
 segmento é recusado quando
 
 - perde, duplica ou inventa um marcador de sintaxe;
@@ -335,7 +397,9 @@ Outras limitações, medidas e não escondidas:
 - **A linha de título perde o alinhamento em colunas.** `SS(8) Manual do
   Gestor de Sistema SS(8)` sai com espaço simples: a linha é tratada como
   prosa, e o que volta traduzido não tem como preservar a centralização.
-- **Só inglês → pt-BR.** O par é fixo.
+- **Só inglês → pt-BR.** O par é fixo hoje, e o caminho do modelo e do cache
+  ainda é a constante `en-pt`. O que separa isso de um segundo par está em
+  [Estado e direção](#estado-e-direção).
 
 ## Como funciona
 
@@ -365,7 +429,7 @@ para quem só quer usar:
 
 ```console
 $ python -m venv .venv && .venv/bin/pip install -e '.[dev,convert]'
-$ .venv/bin/pytest                              # 1397 testes
+$ .venv/bin/pytest                              # 1422 testes
 $ .venv/bin/mypy                                # strict
 $ .venv/bin/mypy --python-version 3.11 babelt    # piso de execução
 ```
@@ -377,10 +441,11 @@ sem ele:
 $ .venv/bin/pytest -m 'not model'
 ```
 
-O histórico de decisões de projeto — com as medições que as sustentam — está
-em [`docs/development/`](docs/development/). Vale a leitura antes de mexer nas
-expressões regulares de `mask.py`: quase toda escolha ali é resposta a um
-falso positivo ou falso negativo medido no corpus.
+O histórico de decisões — com as medições que as sustentam — está em
+[`docs/development/`](docs/development/), com um índice por fase.
+
+[`CONTRIBUTING.md`](CONTRIBUTING.md) tem o passo a passo completo, incluindo o
+que o CI verifica e como rodar o mesmo antes de enviar.
 
 ## Licença
 
@@ -393,8 +458,12 @@ separadamente (CC-BY-4.0) e baixado sob demanda.
 
 <div align="center">
 
-Feito por [ONiceasNeto](https://github.com/ONiceasNeto).
+Feito por [Niceas Neto](https://www.linkedin.com/in/niceas-neto-b37b3a359/).
 
-Achou uma tradução ruim? [Abra uma issue](https://github.com/ONiceasNeto/babelt/issues/new/choose) — é a contribuição mais útil que existe aqui.
+Modelo por [Helsinki-NLP](https://huggingface.co/Helsinki-NLP), sob CC-BY-4.0.
+Código sob [MIT](LICENSE).
+
+**Quer o terminal em outro idioma?**
+[Abra uma issue](https://github.com/ONiceasNeto/babelt/issues/new/choose).
 
 </div>

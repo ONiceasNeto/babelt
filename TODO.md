@@ -41,12 +41,40 @@
 - [ ] `--onedir` no PyInstaller: `--onefile` custa ~2s de descompressão
       em todo caminho quente (medido na Fase 4)
 
-## Multi-idioma (depois de publicar pt-BR)
+## Idiomas
 
-- [ ] Refatorar para `--lang`, com `headers.txt` e `glossary.txt` por
-      idioma
-- [ ] Calibrar limites de comprimento de `validate` por idioma
+**Suporte a um segundo par.** Auditado na fase 10: o pipeline de
+segmentação, máscara e restauração não depende do idioma de saída, e a
+guarda de prosa (`prose.py` + `function_words.txt`) mede a *entrada*, que
+é sempre inglês. O que está preso ao pt-BR fora do modelo e dos arquivos
+de glossário, e teria de mudar:
+
+- [ ] **Parametrizar o par.** `model_path()` devolve
+      `~/.local/share/babelt/models/en-pt` com o `en-pt` literal, e
+      `MODEL_ID`/`MODEL_URL` em `babelt/model.py` são constantes de um par
+      só. Não há dimensão de idioma na CLI, no caminho do modelo nem no do
+      cache. `make_key` já inclui o modelo na proveniência, então o cache
+      se invalida sozinho quando o par muda — mas os dois pares
+      dividiriam o mesmo diretório
+- [ ] **Arquivos de dados por idioma.** `glossary.txt`, `literals.txt` e
+      `headers.txt` são pt-BR. Formato já é texto simples, uma entrada por
+      linha; falta o eixo de idioma no caminho
+- [ ] **Contagem de sentenças** (`validate.py:_SENTENCE_RE`) corta em
+      `.`, `!`, `?` seguidos de espaço. Não reconhece o danda do hindi
+      (`।`), o ponto de interrogação árabe (`؟`) nem a pontuação CJK
+      (`。`), e em chinês e japonês não há espaço depois dela. Bloqueia
+      `en-hi`, `en-ar`, `en-zh`, `en-ja`; irrelevante para pares latinos
+- [ ] **Razão de comprimento** (`validate.py`, `[0,5; 2,5]`) está
+      calibrada para um idioma que expande: medido em `ls`, EN → pt-BR tem
+      mediana 1,13, com folga 0,63 abaixo e 1,37 acima. Idioma que contrai
+      cairia sistematicamente sob o piso. Precisa virar par de limites por
+      idioma, com medição
+- [ ] **Requebra de linha** (`__main__.py:rewrap`) conta caracteres, não
+      largura de exibição. Só afeta escrita de largura dupla (CJK)
 - [ ] Definir política de qualidade para idioma sem revisão humana
+
+Um par latino (`en-es`, `en-fr`, `en-it`) precisa só dos dois primeiros
+itens mais medição. Escrita não latina precisa dos cinco.
 
 ## Limitações conhecidas, sem solução prevista
 

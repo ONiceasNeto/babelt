@@ -7,6 +7,13 @@ Versionamento semântico.
 
 ### Adicionado
 
+- **Seção "Estado e direção" no README**, com a auditoria de o que no código
+  depende do idioma de saída e o que não depende. O pipeline de segmentação,
+  máscara e restauração não depende; a contagem de sentenças e a razão de
+  comprimento de `validate.py` dependem, e o caminho do modelo ainda é a
+  constante `en-pt`. Um par latino é configuração e medição; escrita não
+  latina inclui código.
+
 - **`install.sh`: instalação em um comando.** `./install.sh` monta um venv
   isolado em `~/.local/share/babelt/venv`, instala o babelt lá e liga
   `~/.local/bin/babelt` a ele. Nada toca o Python do sistema e o usuário nunca
