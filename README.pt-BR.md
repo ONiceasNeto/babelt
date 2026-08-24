@@ -181,9 +181,9 @@ escrever Python.
 - **Um novo par de idiomas.** O maior espaço aberto. Converter o modelo,
   montar o glossário, medir a taxa de rejeição — e, para escrita não latina,
   ajustar as duas regras acima.
-- **Testar em outra distro.** O instalador foi validado em Ubuntu 24.04 e
-  Arch. Fedora, openSUSE e Debian estável ainda não. (Alpine não tem como
-  funcionar: o `ctranslate2` não publica wheel para musl.)
+- **Testar em outra distro.** [`CONTRIBUTING.pt-BR.md`](CONTRIBUTING.pt-BR.md)
+  mantém a lista atual de distros não testadas e explica como relatar o que
+  aconteceu.
 - **Traduzir as mensagens do próprio babelt.**
 
 **Melhorar a qualidade**
