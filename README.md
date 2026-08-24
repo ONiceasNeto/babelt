@@ -185,9 +185,8 @@ require writing Python.
 - **A new language pair.** The biggest open space. Convert the model, build
   the glossary, measure the rejection rate — and, for non-Latin scripts,
   adjust the two rules above.
-- **Test on another distro.** The installer has been validated on Ubuntu 24.04
-  and Arch. Fedora, openSUSE and Debian stable have not. (Alpine cannot
-  work yet: `ctranslate2` publishes no musl wheel.)
+- **Test on another distro.** [`CONTRIBUTING.md`](CONTRIBUTING.md) keeps the
+  current list of untested distros and explains how to report what happened.
 - **Translate babelt's own messages.**
 
 **Improving quality**
