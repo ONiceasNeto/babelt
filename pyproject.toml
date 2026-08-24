@@ -37,12 +37,14 @@ dependencies = [
 ]
 
 # Tiradas do remote `origin` deste repositório. Se o projeto for renomeado ou
-# mudar de dono antes de publicar, estas três linhas mudam junto — e o
-# MODEL_URL em babelt/model.py também.
+# mudar de dono antes de publicar, estas linhas mudam junto — e o MODEL_URL em
+# babelt/model.py também.
 [project.urls]
 Homepage = "https://github.com/ONiceasNeto/babelt"
-Changelog = "https://github.com/ONiceasNeto/babelt/blob/main/CHANGELOG.md"
+Repository = "https://github.com/ONiceasNeto/babelt"
 Issues = "https://github.com/ONiceasNeto/babelt/issues"
+Changelog = "https://github.com/ONiceasNeto/babelt/blob/main/CHANGELOG.md"
+Contributing = "https://github.com/ONiceasNeto/babelt/blob/main/CONTRIBUTING.md"
 
 [project.scripts]
 babelt = "babelt.__main__:main"
