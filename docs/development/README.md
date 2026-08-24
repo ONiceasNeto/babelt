@@ -12,9 +12,9 @@ no corpus, e várias hipóteses óbvias já foram testadas e reprovadas.
 > o nome antigo do projeto, `manbr` (a renomeação está na fase 8), e comandos
 > que não são mais o procedimento atual — `PYTHONPATH=. .venv/bin/pytest`, por
 > exemplo, que a instalação editável de hoje dispensa. Para rodar o projeto,
-> siga o [README](../../README.md) ou o
-> [CONTRIBUTING](../../CONTRIBUTING.md); daqui, leia o raciocínio, não copie
-> os comandos.
+> siga o [README](../../README.pt-BR.md) ou o
+> [CONTRIBUTING](../../CONTRIBUTING.pt-BR.md); daqui, leia o raciocínio, não
+> copie os comandos.
 
 ## As fases, em ordem
 
