@@ -207,10 +207,20 @@ O terceiro existe porque o projeto suporta Python 3.11 em diante, e é fácil
 escrever sem querer algo que só funciona no 3.12. Ele confere isso sem você
 precisar instalar o 3.11.
 
-Além disso, se você mexer em `install.sh`:
+Além disso, se você mexer em `install.sh`, rode o `shellcheck`. Ele não vem
+com o `[dev]` nem com o sistema; instale de um destes jeitos:
 
 ```console
-$ shellcheck install.sh
+$ .venv/bin/pip install shellcheck-py       # funciona em qualquer distro
+$ sudo apt install shellcheck               # Debian/Ubuntu/Mint
+$ sudo pacman -S shellcheck                 # Arch
+```
+
+E então:
+
+```console
+$ .venv/bin/shellcheck install.sh           # se instalou via pip
+$ shellcheck install.sh                     # se instalou pela distro
 ```
 
 ### Sobre escrever testes

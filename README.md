@@ -244,18 +244,33 @@ nem `transformers`.
 Quem quiser converter o modelo por conta própria, em vez de baixar o artefato:
 
 ```console
-$ .venv/bin/pip install 'babelt[convert]'
-$ ./scripts/build-model.sh          # imprime o SHA-256 do artefato gerado
+$ python3 -m venv .venv
+$ .venv/bin/pip install -e '.[convert]'   # do clone: `-e '.'`, não `babelt[...]`
+$ ./scripts/build-model.sh                # imprime o SHA-256 do artefato gerado
 ```
+
+O `-e '.'` é obrigatório: `pip install 'babelt[convert]'` iria ao PyPI, onde o
+pacote ainda não está publicado.
 
 ### Diagnóstico
 
 ```console
 $ babelt doctor
-ok    babelt                      0.4.0
-ok    modelo                     /home/você/.local/share/babelt/models/en-pt (227 MiB)
-ok    cache                      /home/você/.cache/babelt — 123 entradas, 16 KiB
-ok    ctranslate2                4.8.1
+ok    babelt                0.5.0
+ok    versão de pipeline    5
+ok    modelo                /home/você/.local/share/babelt/models/en-pt (227 MiB)
+ok    modelo: proveniência  {
+                              "model_id": "Helsinki-NLP/opus-mt-tc-big-en-pt",
+                              "quantization": "int8",
+                              "converted": "2026-08-22T13:44:29Z",
+                              "converter": "ctranslate2",
+                              "license": "CC-BY-4.0",
+                              "attribution": "Helsinki-NLP / ..."
+                            }
+ok    cache                 /home/você/.cache/babelt — 123 entradas, 16 KiB
+ok    ctranslate2           4.8.1
+ok    sentencepiece         0.2.2
+ok    man                   /usr/bin/man
 ```
 
 Sai com 1 quando algo impede traduzir, 0 quando é só aviso.
@@ -428,7 +443,7 @@ Para mexer no código, o caminho é o editável — não o `install.sh`, que exi
 para quem só quer usar:
 
 ```console
-$ python -m venv .venv && .venv/bin/pip install -e '.[dev,convert]'
+$ python3 -m venv .venv && .venv/bin/pip install -e '.[dev,convert]'
 $ .venv/bin/pytest                              # 1422 testes
 $ .venv/bin/mypy                                # strict
 $ .venv/bin/mypy --python-version 3.11 babelt    # piso de execução
