@@ -186,7 +186,8 @@ require writing Python.
   the glossary, measure the rejection rate — and, for non-Latin scripts,
   adjust the two rules above.
 - **Test on another distro.** The installer has been validated on Ubuntu 24.04
-  and Arch. Fedora, openSUSE, Alpine and Debian stable have not.
+  and Arch. Fedora, openSUSE and Debian stable have not. (Alpine cannot
+  work yet: `ctranslate2` publishes no musl wheel.)
 - **Translate babelt's own messages.**
 
 **Improving quality**
@@ -424,9 +425,13 @@ Other limitations, measured and not hidden:
   terms to English (`soquete` → `socket`), but does not know which English
   word produced the translated one. Ambiguous entries were removed by
   measurement.
-- **The title line loses its column alignment.** `SS(8) Manual do Gestor de
-  Sistema SS(8)` comes out with single spaces: the line is treated as prose,
-  and what comes back translated cannot preserve the centring.
+- **The title line loses its alignment, and its middle stays in English.**
+  `LS(1)   User Commands   LS(1)` comes out as `LS(1) User Commands LS(1)`.
+  Two separate defects: the line is classified as prose, and reflowing prose
+  collapses the alignment spacing; and the translation — which the model gets
+  right — is rejected on length ratio, because 72% of the original line is
+  whitespace and no model output can match that. It needs a segment type of
+  its own, as two-column tables already have.
 - **English → pt-BR only.** The pair is fixed today, and the model and cache
   paths are still the `en-pt` constant. What separates that from a second pair
   is in [Status and direction](#status-and-direction).

@@ -36,9 +36,8 @@ How to do it:
 1. Run `babelt <some command>` — for example `babelt tar`, `babelt find`.
 2. Find a line that came out wrong, meaningless, or that should have been
    translated and was not.
-3. Open the **Tradução ruim** (bad translation) issue and fill in the three
-   fields it asks for: the command, the output you saw, and what is wrong
-   with it.
+3. Open the **Bad translation** issue and fill in the three fields it asks
+   for: the command, the output you saw, and what is wrong with it.
 
 You do not need to know *why* it is wrong. "This makes no sense" is a complete
 report.
@@ -46,9 +45,9 @@ report.
 Other ways to help without writing Python:
 
 - **Test on another distro.** The installer has been validated on Ubuntu 24.04
-  and Arch. Fedora, openSUSE, Alpine and Debian stable have not. Running
-  `./install.sh` on one of them and reporting what happened is a whole
-  contribution.
+  and Arch. Fedora, openSUSE and Debian stable have not. (Alpine cannot work
+  yet: `ctranslate2` publishes no musl wheel.) Running `./install.sh` on one
+  of them and reporting what happened is a whole contribution.
 - **Improve the documentation.** Including this file.
 - **Translate babelt's own messages.**
 

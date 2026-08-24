@@ -182,7 +182,8 @@ escrever Python.
   montar o glossário, medir a taxa de rejeição — e, para escrita não latina,
   ajustar as duas regras acima.
 - **Testar em outra distro.** O instalador foi validado em Ubuntu 24.04 e
-  Arch. Fedora, openSUSE, Alpine e Debian estável ainda não.
+  Arch. Fedora, openSUSE e Debian estável ainda não. (Alpine não tem como
+  funcionar: o `ctranslate2` não publica wheel para musl.)
 - **Traduzir as mensagens do próprio babelt.**
 
 **Melhorar a qualidade**
@@ -413,9 +414,13 @@ Outras limitações, medidas e não escondidas:
 - **O glossário é cego a contexto.** `babelt/glossary.txt` devolve termos
   técnicos ao inglês (`soquete` → `socket`), mas não sabe qual palavra
   inglesa gerou a portuguesa. Entradas ambíguas foram removidas por medição.
-- **A linha de título perde o alinhamento em colunas.** `SS(8) Manual do
-  Gestor de Sistema SS(8)` sai com espaço simples: a linha é tratada como
-  prosa, e o que volta traduzido não tem como preservar a centralização.
+- **A linha de título perde o alinhamento, e o meio dela fica em inglês.**
+  `LS(1)   User Commands   LS(1)` sai `LS(1) User Commands LS(1)`. São dois
+  defeitos: a linha é classificada como prosa, e refluir prosa colapsa os
+  espaços de alinhamento; e a tradução — que o modelo faz certo — é rejeitada
+  por razão de comprimento, porque 72% da linha original é espaço e a saída do
+  modelo não tem como bater com isso. Pede um tipo de segmento próprio, como
+  já existe para tabela de duas colunas.
 - **Só inglês → pt-BR.** O par é fixo hoje, e o caminho do modelo e do cache
   ainda é a constante `en-pt`. O que separa isso de um segundo par está em
   [Estado e direção](#estado-e-direção).

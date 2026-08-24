@@ -37,6 +37,11 @@
 - [x] `babelt doctor`: diagnostica modelo ausente, cache corrompido,
       versão de pipeline divergente (fase 7; a fase 8 acrescentou o aviso
       de diretório órfão do nome antigo)
+- [ ] **Alpine não é suportado** (medido na fase 12): `ctranslate2` não
+      publica wheel para musl, só manylinux, e o `pip install` falha antes de
+      qualquer coisa do babelt rodar. Sair do "não testado" para o "não
+      suportado" exige compilar o ctranslate2 no Alpine ou esperar wheel musl
+      upstream. Tirar Alpine da lista de distros a testar no README
 - [ ] Avaliar PPA (Launchpad) para `apt install`
 - [ ] `--onedir` no PyInstaller: `--onefile` custa ~2s de descompressão
       em todo caminho quente (medido na Fase 4)
@@ -78,8 +83,29 @@ itens mais medição. Escrita não latina precisa dos cinco.
 
 ## Limitações conhecidas, sem solução prevista
 
-- [ ] Alinhamento da linha de título se perde (exigiria mexer em
-      `segment.py`)
+- [ ] **Linha de título: alinhamento perdido e texto em inglês** (fase 12,
+      diagnosticado e não corrigido). `LS(1)  User Commands  LS(1)` sai como
+      `LS(1) User Commands LS(1)`. São **dois** defeitos com causas
+      diferentes, e o segundo não é o que o README dizia:
+
+      1. *Alinhamento*: a linha é classificada `PROSE`, e `rewrap` reflui
+         prosa — os 56 espaços de alinhamento viram um.
+      2. *Inglês*: **o modelo traduz certo** — devolve
+         `LS(1) Comandos do Usuário LS(1)`. Quem rejeita é o validador, por
+         razão de comprimento **0,40**, abaixo do piso de 0,5. A linha tem 78
+         caracteres, dos quais 56 são espaço de alinhamento (72%); o modelo
+         colapsa o espaço e devolve 31. Sem contar o espaço de alinhamento a
+         razão seria 31/25 = 1,24, no meio da janela.
+
+      **Não é caso de `headers.txt`**: `User Commands` não é cabeçalho de
+      seção, é a coluna central de uma linha de três colunas gerada pelo roff,
+      e `translate_header` compara o segmento inteiro com a tabela. Pede
+      tratamento próprio: um tipo de segmento para a linha de título, com as
+      três colunas separadas e só a central indo ao modelo — o mesmo desenho
+      de `SegmentKind.COLUMNS`, que já resolve exatamente este problema para
+      tabela de duas colunas. Resolveria os dois defeitos de uma vez. O rodapé
+      (`GNU coreutils 9.4   April 2024   LS(1)`) tem a mesma forma, 49 de 78
+      caracteres em espaço
 - [ ] `headless` / `non-headless` colapsam no modelo; mitigado por
       `literals.txt` ao custo de a frase sair em inglês
 - [ ] Dois intratáveis de mascaramento: `\` nu e `-` nu em meio de frase

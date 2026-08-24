@@ -31,7 +31,7 @@ Como fazer:
 1. Rode `babelt <algum comando>` — por exemplo `babelt tar`, `babelt find`.
 2. Ache uma linha que saiu errada, sem sentido, ou que devia ter sido
    traduzida e não foi.
-3. Abra a issue **Tradução ruim** e cole os três campos que ela pede: o
+3. Abra a issue **Bad translation** e cole os três campos que ela pede: o
    comando, a saída que você viu, e o que está errado nela.
 
 Não precisa saber por que está errado. "Isso não faz sentido em português"
@@ -40,7 +40,8 @@ Não precisa saber por que está errado. "Isso não faz sentido em português"
 Outras formas de ajudar sem escrever Python:
 
 - **Testar em outra distro.** O instalador foi validado em Ubuntu 24.04 e
-  Arch. Fedora, openSUSE, Alpine e Debian estável ainda não. Rodar
+  Arch. Fedora, openSUSE e Debian estável ainda não. (Alpine não tem como
+  funcionar: o `ctranslate2` não publica wheel para musl.) Rodar
   `./install.sh` numa delas e contar o que aconteceu é uma contribuição
   inteira.
 - **Melhorar a documentação.** Inclusive esta.
