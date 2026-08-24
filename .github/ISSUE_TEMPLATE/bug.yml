@@ -1,42 +1,45 @@
 name: Bug
-description: O babelt travou, deu erro, ou fez algo que não devia
+description: babelt crashed, errored out, or did something it should not
 title: "[bug] "
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Para tradução que saiu ruim mas o programa funcionou, use
-        **Tradução ruim** — o formulário lá pede as coisas certas.
+        For a translation that came out badly while the program worked, use
+        **Bad translation** — that form asks for the right things.
+
+        Reports in English, Portuguese or Spanish are all welcome.
 
   - type: textarea
-    id: o-que-aconteceu
+    id: what-happened
     attributes:
-      label: O que aconteceu
-      description: E o que você esperava que acontecesse.
+      label: What happened
+      description: And what you expected to happen instead.
     validations:
       required: true
 
   - type: textarea
-    id: reproduzir
+    id: reproduce
     attributes:
-      label: Como reproduzir
-      description: Os comandos, na ordem, começando de um estado limpo se souber.
+      label: How to reproduce
+      description: The commands, in order, starting from a clean state if you know it.
       placeholder: |
         1. ./install.sh --no-model
         2. babelt ls
-        3. trava aqui
+        3. hangs here
       render: text
     validations:
       required: true
 
   - type: textarea
-    id: erro
+    id: error
     attributes:
-      label: Mensagem de erro
+      label: Error message
       description: >
-        Cole tudo o que apareceu, inclusive o traceback se houver. Não corte —
-        a parte que parece irrelevante costuma ser a que importa.
+        Paste everything that appeared, including the traceback if there is
+        one. Do not trim it — the part that looks irrelevant is usually the
+        one that matters.
       render: text
     validations:
       required: false
@@ -44,27 +47,27 @@ body:
   - type: textarea
     id: doctor
     attributes:
-      label: Saída de `babelt doctor`
+      label: Output of `babelt doctor`
       description: >
-        Diagnostica modelo, cache, bibliotecas e `man`. Se o babelt não roda
-        nem isso, escreva o que aconteceu ao tentar.
+        It diagnoses model, cache, libraries and `man`. If babelt cannot even
+        run that, write what happened when you tried.
       render: text
     validations:
       required: false
 
   - type: input
-    id: sistema
+    id: system
     attributes:
-      label: Distro e versão do Python
-      description: A saída de `python3 --version` e o nome da sua distro.
+      label: Distro and Python version
+      description: The output of `python3 --version` and the name of your distro.
       placeholder: Ubuntu 24.04, Python 3.12.3
     validations:
       required: true
 
   - type: input
-    id: versao
+    id: version
     attributes:
-      label: Versão do babelt
+      label: babelt version
       placeholder: babelt 0.5.0
     validations:
       required: false

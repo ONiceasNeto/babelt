@@ -1,0 +1,39 @@
+name: Suggestion
+description: An idea for a feature or an improvement
+title: "[suggestion] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Half-formed ideas are welcome. If you only know the problem and not
+        the solution, describe the problem — that is the hard part anyway.
+
+        Reports in English, Portuguese or Spanish are all welcome.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve
+      description: >
+        What is annoying or impossible today. Describing the real situation
+        helps more than describing the solution: sometimes there is a better
+        way through.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you had in mind
+      description: How it would work. No commitment — a sketch is fine.
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Have you tried another way?
+      description: What you do today to work around it, if anything.
+    validations:
+      required: false
