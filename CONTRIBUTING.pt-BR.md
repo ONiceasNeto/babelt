@@ -39,11 +39,12 @@ Não precisa saber por que está errado. "Isso não faz sentido em português"
 
 Outras formas de ajudar sem escrever Python:
 
-- **Testar em outra distro.** O instalador foi validado em Ubuntu 24.04 e
-  Arch. Fedora, openSUSE e Debian estável ainda não. (Alpine não tem como
-  funcionar: o `ctranslate2` não publica wheel para musl.) Rodar
-  `./install.sh` numa delas e contar o que aconteceu é uma contribuição
-  inteira.
+- **Testar em outra distro.** O instalador foi validado em Ubuntu 24.04, Arch
+  e Fedora 44 (Python 3.14) — a rodada no Fedora usou `--no-model`, então o
+  download do modelo continua sem ser exercitado lá. openSUSE e Debian estável
+  não foram testados. (Alpine não tem como funcionar: o `ctranslate2` não
+  publica wheel para musl.) Rodar `./install.sh` numa delas e contar o que
+  aconteceu é uma contribuição inteira.
 - **Melhorar a documentação.** Inclusive esta.
 - **Traduzir as mensagens do próprio babelt.**
 

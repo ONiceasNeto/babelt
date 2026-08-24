@@ -44,10 +44,12 @@ report.
 
 Other ways to help without writing Python:
 
-- **Test on another distro.** The installer has been validated on Ubuntu 24.04
-  and Arch. Fedora, openSUSE and Debian stable have not. (Alpine cannot work
-  yet: `ctranslate2` publishes no musl wheel.) Running `./install.sh` on one
-  of them and reporting what happened is a whole contribution.
+- **Test on another distro.** The installer has been validated on Ubuntu
+  24.04, Arch and Fedora 44 (Python 3.14) — the Fedora run used `--no-model`,
+  so the model download is still unexercised there. openSUSE and Debian stable
+  have not been tested at all. (Alpine cannot work yet: `ctranslate2`
+  publishes no musl wheel.) Running `./install.sh` on one of them and
+  reporting what happened is a whole contribution.
 - **Improve the documentation.** Including this file.
 - **Translate babelt's own messages.**
 
