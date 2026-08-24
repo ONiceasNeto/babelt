@@ -1,4 +1,4 @@
-# babelt — `katana --help`, antes e depois da fase 5
+# babelt — `katana --help` através das fases 4, 5 e 6
 
 Gerado com `babelt --help-of katana`, cache frio, beam 1. Nada foi retocado.
 
