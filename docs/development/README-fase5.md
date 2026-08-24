@@ -19,7 +19,7 @@ cache da fase 4 se invalida sozinho.
 (91,7%) com a coluna da esquerda intacta.** Na fase 4 a mesma página produzia
 um parágrafo corrido em inglês e um comando inventado (`katana [band]`).
 
-O lado a lado está em [fase5-katana.md](fase5-katana.md).
+O lado a lado está em [caso-katana.md](caso-katana.md).
 
 ## Parte A — mask: a fase 3.2 pendente
 
