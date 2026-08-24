@@ -1,7 +1,53 @@
-# babelt
 
-Traduz saída de terminal em inglês — man pages, `--help` — para português do
-Brasil, **sem rede**, com um modelo de tradução local.
+<div align="center">
+
+```
+                              ▄▄▄▄▄▄▄▄▄
+                          ▄▄█████████████▄▄
+                        ██████████████████████
+                      ▄▄██████████████████████▄▄
+                  ▄▄██████████████████████████████▄▄
+                ████████████████████████████████████
+             ▄▄████████████████████████████████████████▄▄
+           ██████████████████████████████████████████████████
+        ▄▄██████████████████████████████████████████████████████▄▄
+      ████████████████████████████████████████████████████████████████
+```
+
+```
+      ██████╗  █████╗ ██████╗ ███████╗██╗  ████████╗
+      ██╔══██╗██╔══██╗██╔══██╗██╔════╝██║  ╚══██╔══╝
+      ██████╔╝███████║██████╔╝█████╗  ██║     ██║
+      ██╔══██╗██╔══██║██╔══██╗██╔══╝  ██║     ██║
+      ██████╔╝██║  ██║██████╔╝███████╗███████╗██║
+      ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚═╝
+```
+
+**A torre caiu. O terminal continuou falando inglês.**
+
+*Tradutor offline de saída de terminal, EN → pt-BR.*
+
+[![CI](https://github.com/ONiceasNeto/babelt/actions/workflows/ci.yml/badge.svg)](https://github.com/ONiceasNeto/babelt/actions/workflows/ci.yml)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
+
+</div>
+
+---
+
+```console
+$ babelt ls
+Usage: ls [OPTION]... [FILE]...
+Listar informações sobre os FILEs (o diretório atual por padrão). Classificar as
+entradas em ordem alfabética se nenhum dos -cftuvSUX nem --sort for
+especificado.
+
+  -a, --all                  Não ignore as entradas que começam com .
+  -A, --almost-all           não listar implícito . e ..
+  -B, --ignore-backups       não listar entradas implícitas terminadas em ~
+```
+
+E uma man page inteira:
 
 ```console
 $ babelt ss
@@ -22,15 +68,34 @@ DESCRIÇÃO
 Saída real, não retocada. `SINOPSE` fica em inglês de propósito: a sinopse é
 gramática de comando, tratada como bloco literal e nunca enviada ao modelo.
 
-## O que torna isto diferente de canalizar man por um tradutor
+Sem nuvem. Sem chave de API. Sem enviar seu terminal para lugar nenhum.
+O modelo roda na sua máquina, em CPU, e o `--help` do `ls` sai em português
+em menos de um segundo.
+
+---
+
+## Por que isso existe
+
+A barreira de entrada do terminal não é conceitual. É linguística.
+
+Quem está começando não trava porque `find` é difícil — trava porque a
+resposta para o erro está num `man` de trezentas linhas em inglês técnico.
+A documentação existe, está instalada na máquina, e é ilegível para boa parte
+de quem mais precisa dela.
+
+O babelt não simplifica nada. Traduz o que já está lá, preservando cada flag,
+cada caminho e cada exemplo intactos, e devolve o inglês original quando não
+consegue traduzir bem. A ideia é que ninguém precise escolher entre aprender
+inglês e aprender Linux.
+
+## Como ele evita estragar sua saída
+
+Traduzir texto de terminal é diferente de traduzir prosa. `--block-size=SIZE`
+não é uma frase. `/usr/local/bin` não deve virar `/usr/local/caixa`.
 
 **Nenhuma flag, caminho, variável ou endereço chega ao modelo.** Antes de
 traduzir, cada token de sintaxe é substituído por um marcador opaco; depois da
-tradução, o literal original volta byte a byte. Se o marcador não voltar
-intacto, a tradução é **descartada** e a linha sai em inglês.
-
-Isso é o projeto inteiro. Uma flag traduzida produz um comando inválido que o
-usuário vai copiar e colar — pior que não traduzir.
+tradução, o literal original volta byte a byte.
 
 ```
 Use --verbose to list the contents of /etc/services.
@@ -38,8 +103,47 @@ Use --verbose para listar o conteúdo de /etc/services.
      ^^^^^^^^^                         ^^^^^^^^^^^^^^ intactos, garantidos
 ```
 
-A garantia não vem da qualidade do modelo. Vem de mascarar antes e rejeitar
-por código depois.
+Depois, cada segmento traduzido passa por um validador que confere se as
+máscaras voltaram, se o comprimento é plausível e se não há corrupção.
+**Segmento que não passa é descartado e o inglês original é devolvido no
+lugar** — a saída pode ficar parcialmente em inglês, mas nunca sai errada.
+
+Uma flag traduzida produz um comando inválido que o usuário vai copiar e
+colar: pior que não traduzir. A garantia não vem da qualidade do modelo, vem
+de mascarar antes e rejeitar por código depois.
+
+Medido em `ls`, `grep`, `find`, `tar`, `ssh` e `git`: **85,4% da prosa é
+traduzida** — 1.609 de 1.884 segmentos — e os outros 275 voltam ao inglês
+original. `babelt --stats <comando>` mostra o número da sua máquina, com o
+motivo de cada rejeição.
+
+---
+
+## Contribuindo
+
+**Este projeto quer contribuidores iniciantes.** Não é frase de efeito, é o
+ponto do projeto: uma ferramenta que existe para baixar a barreira de entrada
+não pode ter uma barreira de entrada alta.
+
+Se você nunca abriu um pull request, este é um bom lugar para o primeiro.
+Issues marcadas `good first issue` são escolhidas para isso, e revisão
+mal-humorada não é aceita aqui — pergunta boba não existe.
+
+Formas de ajudar que **não** exigem escrever Python:
+
+- **Reportar tradução ruim.** Rode `babelt <comando>`, encontre uma linha que
+  saiu esquisita, e abra uma issue com a saída. Isso é dado de qualidade e
+  vale mais que código.
+- **Testar em outra distro.** O instalador foi validado em Ubuntu e Arch.
+  Fedora, openSUSE, Alpine e Debian estável ainda não.
+- **Melhorar a documentação.** Se algo neste README te confundiu, o texto está
+  errado, não você.
+- **Traduzir mensagens do próprio babelt.**
+
+E se quiser mexer no código, a suíte de testes é grande de propósito — ela
+existe para você poder quebrar coisas com segurança e descobrir na hora.
+
+Comece por [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Instalação
 
@@ -126,9 +230,9 @@ babelt: traduzidos: 62 (81.6%); mantidos em inglês: 14 (18.4%)
 babelt: rejeitados por motivo:
 babelt:      5 (6.6%)  placeholder ausente
 babelt:      4 (5.3%)  peça fora do vocabulário (oov)
+babelt:      3 (3.9%)  delimitador
 babelt:      2 (2.6%)  razão de comprimento
-babelt:      1 (1.3%)  delimitador
-babelt: cache: 42 acertos de segmento
+babelt: cache: 0 acertos de segmento
 ```
 
 Segmento rejeitado sai em inglês, e isso é o comportamento desejado: uma
@@ -284,3 +388,13 @@ MIT. Veja [LICENSE](LICENSE).
 
 O modelo de tradução é `Helsinki-NLP/opus-mt-tc-big-en-pt`, licenciado
 separadamente (CC-BY-4.0) e baixado sob demanda.
+
+---
+
+<div align="center">
+
+Feito por [ONiceasNeto](https://github.com/ONiceasNeto).
+
+Achou uma tradução ruim? [Abra uma issue](https://github.com/ONiceasNeto/babelt/issues/new/choose) — é a contribuição mais útil que existe aqui.
+
+</div>
