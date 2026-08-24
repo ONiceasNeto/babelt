@@ -17,7 +17,13 @@ CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/babelt"
 BIN="$BINDIR/babelt"
 MIN_PY=11
 
-say()  { printf '\033[1;34m::\033[0m %s\n' "$*"; }
+# Tudo o que o instalador fala vai para stderr, `say` inclusive. Antes `say`
+# ia para stdout e `warn` para stderr, e as linhas se cruzavam na tela porque
+# os dois fluxos não sincronizam: o aviso de PATH aparecia separado da
+# sugestão que ele introduz. Um instalador não produz dado em stdout — tudo
+# aqui é conversa —, e é o mesmo contrato que o babelt cumpre: stdout é
+# resultado, stderr é recado.
+say()  { printf '\033[1;34m::\033[0m %s\n' "$*" >&2; }
 warn() { printf '\033[1;33m!!\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31mxx\033[0m %s\n' "$*" >&2; exit 1; }
 

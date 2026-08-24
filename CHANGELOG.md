@@ -51,8 +51,11 @@ Versionamento semântico.
   `python3 -m venv` montava meio ambiente e o erro vinha do Python, já com o
   venv quebrado no disco. Agora checa `ensurepip`, e um `venv` que falhe
   mesmo assim é removido antes de sair.
-- A sugestão de `PATH` do instalador ia para stdout enquanto o aviso que a
-  introduz ia para stderr, e as duas apareciam deslocadas uma da outra.
+- Todo o recado do `install.sh` passou a sair em stderr, `say` inclusive.
+  Antes `say` ia para stdout e `warn` para stderr, e as linhas se cruzavam na
+  tela porque os dois fluxos não sincronizam. Um instalador não produz dado em
+  stdout, e agora ele cumpre o mesmo contrato do babelt: stdout é resultado,
+  stderr é recado.
 - Falha no download do modelo não desfaz mais nada: o babelt fica instalado e
   utilizável, e tenta o download de novo no primeiro uso. `ModelError` sai como
   mensagem, não como traceback, espelhando `ensure_model()`.

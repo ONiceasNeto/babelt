@@ -60,6 +60,20 @@
       que a tradução fica bem formada — a contagem de palavras bate e os
       delimitadores batem. Exigiria detecção posicional na entrada:
       primeira palavra de descrição pendurada. Medido na fase 7
+- [ ] **Prefixo comido antes de placeholder inicial** (fase 9, diagnosticado
+      e não corrigido). `with -lt: sort by` sai `-lt: classificar por`: o
+      `with` some. **Não é a máscara** — ela entrega `with ⟦0⟧: sort by`
+      intacto ao modelo, que devolve `⟦0⟧: classificar por`. É o modelo
+      descartando o que vem antes de um placeholder que aparece cedo num
+      segmento curto. Reproduz com `like -l but`, `same as -l but`,
+      `use -l to`, `in /etc/services the` — todos perdem o prefixo. Não
+      reproduz quando há mais contexto depois (`with --color the output is
+      colored` → `com ⟦0⟧ a saída é colorida`) nem quando há conteúdo lexical
+      entre a preposição e o placeholder (`with the option -lt` → `com a
+      opção ⟦0⟧`). **O validador aprova os oito casos**: o placeholder volta,
+      o comprimento é plausível, não há `<unk>` e a contagem de sentenças
+      bate. É a mesma classe do item abaixo, e detectá-la esbarra no mesmo
+      problema de separação entre as populações
 - [ ] Omissão de palavra pela tradução: medida na fase 6 (razão de
       conteúdo) e na fase 7 (perda da primeira palavra), reprovada nas
       duas por falta de separação entre as populações — 60% e 19% de
